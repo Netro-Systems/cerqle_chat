@@ -86,31 +86,11 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
     final custom = widget.builder;
     if (custom != null) return custom(context, _state, open);
 
-    final isConfigurationLoaded = _state.widget != null;
-    final reduceMotion =
-        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
-    if (reduceMotion) {
-      if (!isConfigurationLoaded) return const SizedBox.shrink();
-      return _buildPositionedLauncher(
-        context,
-        child: _buildDefaultLauncherButton(context, open),
-      );
-    }
-
     return _buildPositionedLauncher(
       context,
-      child: AnimatedSwitcher(
-        key: const ValueKey<String>('cerqle-launcher-transition'),
-        duration: const Duration(milliseconds: 140),
-        transitionBuilder: _buildZoomTransition,
-        child: isConfigurationLoaded
-            ? KeyedSubtree(
-                key: const ValueKey<String>('cerqle-launcher-loaded'),
-                child: _buildDefaultLauncherButton(context, open),
-              )
-            : const SizedBox.shrink(
-                key: ValueKey<String>('cerqle-launcher-loading'),
-              ),
+      child: KeyedSubtree(
+        key: const ValueKey<String>('cerqle-launcher-loaded'),
+        child: _buildDefaultLauncherButton(context, open),
       ),
     );
   }
@@ -157,21 +137,6 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildZoomTransition(Widget child, Animation<double> animation) {
-    final scale = Tween<double>(
-      begin: 0,
-      end: 1,
-    ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
-    return ScaleTransition(
-      key: child.key == const ValueKey<String>('cerqle-launcher-loaded')
-          ? const ValueKey<String>('cerqle-launcher-zoom')
-          : null,
-      scale: scale,
-      alignment: Alignment.center,
-      child: child,
     );
   }
 

@@ -49,10 +49,12 @@ class _BrandMark extends StatelessWidget {
           shape: BoxShape.circle,
           border: Border.all(color: cerqleBorder),
         ),
-        child: SvgPicture.asset(
-          'assets/images/cerqle-icon.svg',
-          package: 'cerqle_chat',
-          fit: BoxFit.cover,
+        child: ClipOval(
+          child: SvgPicture.asset(
+            'assets/images/cerqle-icon-purple-bg.svg',
+            package: 'cerqle_chat',
+            fit: BoxFit.cover,
+          ),
         ),
       );
 }

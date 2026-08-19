@@ -14,8 +14,9 @@ class CerqleClient {
     required this.config,
     http.Client? httpClient,
     CerqleSessionStore? sessionStore,
-  }) : _httpClient = httpClient ?? http.Client(),
-       _ownsHttpClient = httpClient == null {
+    WidgetRealtimeConnector? realtimeConnector,
+  })  : _httpClient = httpClient ?? http.Client(),
+        _ownsHttpClient = httpClient == null {
     validateCerqleConfig(config);
     final baseUrl = validateAndCanonicalizeBaseUrl(config.apiBaseUrl);
     _remoteDataSource = _createWidgetRemoteDataSource(
@@ -27,6 +28,8 @@ class CerqleClient {
       remoteDataSource: _remoteDataSource,
       sessionStore: sessionStore ?? FlutterSecureCerqleSessionStore(),
     );
+    _realtimeConnector = realtimeConnector ??
+        PusherWidgetRealtimeConnector(httpClient: _httpClient);
   }
 
   /// Immutable configuration used for every operation.
@@ -35,13 +38,14 @@ class CerqleClient {
   final bool _ownsHttpClient;
   late final WidgetRemoteDataSource _remoteDataSource;
   late final _SessionCoordinator _sessions;
+  late final WidgetRealtimeConnector _realtimeConnector;
   bool _closed = false;
 
   CerqleUser? get _activeUser => _sessions.activeUser;
 
-  Future<WidgetSessionResult> _startSession() {
+  Future<WidgetSessionResult> _startSession({String? deviceId}) {
     _ensureOpen();
-    return _sessions.start();
+    return _sessions.start(deviceId: deviceId);
   }
 
   Future<WidgetPollResult> _poll(int after) {
@@ -102,14 +106,42 @@ class CerqleClient {
     );
   }
 
-  Future<WidgetSessionResult> _submitPreChat(CerqlePreChatData preChat) =>
-      _sessions.submitPreChat(preChat);
+  Future<WidgetSessionResult> _submitPreChat(
+    CerqlePreChatData preChat, {
+    String? deviceId,
+  }) =>
+      _sessions.submitPreChat(preChat, deviceId: deviceId);
 
   Future<void> _markPreChatCompleted() => _sessions.markPreChatCompleted();
 
   Future<bool> _switchUser(CerqleUser? user) => _sessions.switchUser(user);
 
   Future<void> _clearSession() => _sessions.clear();
+
+  Future<void> _startRealtime({
+    required CerqleRealtimeConfig realtime,
+    required int conversationId,
+    void Function()? onConnected,
+    WidgetRealtimePayloadCallback? onMessageCreated,
+    WidgetRealtimePayloadCallback? onTypingChanged,
+    WidgetRealtimePayloadCallback? onHandoffUpdated,
+    WidgetRealtimeErrorCallback? onError,
+  }) {
+    final session = _requireSession();
+    return _realtimeConnector.start(
+      config: realtime,
+      widgetKey: config.widgetKey,
+      token: session.token,
+      conversationId: conversationId,
+      onConnected: onConnected,
+      onMessageCreated: onMessageCreated,
+      onTypingChanged: onTypingChanged,
+      onHandoffUpdated: onHandoffUpdated,
+      onError: onError,
+    );
+  }
+
+  Future<void> _stopRealtime() => _realtimeConnector.stop();
 
   CerqleStoredSession _requireSession() {
     _ensureOpen();
@@ -133,6 +165,7 @@ class CerqleClient {
   Future<void> close() async {
     if (_closed) return;
     _closed = true;
+    await _realtimeConnector.stop();
     _sessions.disposeMemory();
     if (_ownsHttpClient) _httpClient.close();
   }

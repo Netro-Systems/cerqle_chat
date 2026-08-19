@@ -31,7 +31,13 @@ class CerqleConfig {
     this.mediaAdapter,
     this.polling = const CerqlePollingConfig(),
     this.diagnostics,
+    this.oneSignalAppId = defaultOneSignalAppId,
+    this.enableOneSignal = true,
   });
+
+  /// Default OneSignal App ID used across Cerqle ecosystem.
+  static const String defaultOneSignalAppId =
+      'b9113548-23d3-4540-9320-6ef5023d2ed3';
 
   /// Public widget routing key issued by Cerqle.
   final String widgetKey;
@@ -62,4 +68,10 @@ class CerqleConfig {
 
   /// Optional receiver for redacted operational diagnostics.
   final CerqleDiagnosticsCallback? diagnostics;
+
+  /// OneSignal App ID used for push notifications.
+  final String oneSignalAppId;
+
+  /// Whether OneSignal push notification device registration is enabled.
+  final bool enableOneSignal;
 }

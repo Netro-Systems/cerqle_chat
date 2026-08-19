@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cerqle_chat/src/application/services/widget_realtime_connector.dart';
+import 'package:cerqle_chat/src/data/network/response_decoder.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -16,6 +18,7 @@ part 'delivery_tests.dart';
 part 'delivery_edge_case_tests.dart';
 part 'identity_sync_tests.dart';
 part 'pre_chat_lifecycle_tests.dart';
+part 'realtime_tests.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +26,7 @@ void main() {
   const config = CerqleConfig(
     widgetKey: 'test-widget',
     apiBaseUrl: 'https://chat.example.com/base/',
+    enableOneSignal: false,
     polling: CerqlePollingConfig(
       visibleInterval: Duration(minutes: 1),
       idleInterval: Duration(minutes: 1),
@@ -35,4 +39,5 @@ void main() {
   registerDeliveryEdgeCaseTests(config);
   registerIdentitySyncTests(config);
   registerPreChatLifecycleTests(config);
+  registerRealtimeTests(config);
 }

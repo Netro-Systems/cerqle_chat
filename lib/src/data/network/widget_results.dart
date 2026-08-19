@@ -9,6 +9,7 @@ final class WidgetSessionResult {
   /// Creates a fully decoded session result.
   WidgetSessionResult({
     required this.session,
+    required this.conversationId,
     required this.widget,
     required this.messages,
     required this.supportAvailability,
@@ -17,6 +18,9 @@ final class WidgetSessionResult {
 
   /// Secure visitor credentials returned by the backend.
   final CerqleStoredSession session;
+
+  /// Backend conversation identifier used for realtime event routing.
+  final int conversationId;
 
   /// Backend-authoritative widget configuration.
   final CerqleWidgetConfig widget;

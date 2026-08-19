@@ -17,6 +17,7 @@ abstract interface class WidgetRemoteDataSource {
     required CerqleUser? user,
     required CerqleStoredSession? storedSession,
     bool preChatCompleted = false,
+    String? deviceId,
   });
 
   Future<WidgetPollResult> poll({
@@ -75,11 +76,13 @@ final class HttpWidgetRemoteDataSource implements WidgetRemoteDataSource {
     required CerqleUser? user,
     required CerqleStoredSession? storedSession,
     bool preChatCompleted = false,
+    String? deviceId,
   }) async {
     final body = _encoder.sessionBody(
       widgetKey: widgetKey,
       user: user,
       storedSession: storedSession,
+      deviceId: deviceId,
     );
     final response = await _networkCaller.postJson(
       ApiEndpoints.session,

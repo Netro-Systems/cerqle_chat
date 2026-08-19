@@ -99,6 +99,7 @@ void registerPreChatLifecycleTests(CerqleConfig config) {
     final userConfig = CerqleConfig(
       widgetKey: config.widgetKey,
       apiBaseUrl: config.apiBaseUrl,
+      enableOneSignal: false,
       user: const CerqleUser(
         name: 'Jane Doe',
         email: 'jane@example.com',
@@ -146,6 +147,7 @@ void registerPreChatLifecycleTests(CerqleConfig config) {
     const pollingConfig = CerqleConfig(
       widgetKey: 'test-widget',
       apiBaseUrl: 'https://chat.example.com',
+      enableOneSignal: false,
       polling: CerqlePollingConfig(
         visibleInterval: Duration(seconds: 3),
         idleInterval: Duration(seconds: 3),

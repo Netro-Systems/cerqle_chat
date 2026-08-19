@@ -30,20 +30,24 @@ final class _SessionCoordinator {
 
   CerqleUser? get activeUser => _activeUser;
 
-  Future<WidgetSessionResult> start() async {
+  Future<WidgetSessionResult> start({String? deviceId}) async {
     final stored = _session ?? await _readStoredSession();
     final result = await _remoteDataSource.startSession(
       widgetKey: config.widgetKey,
       user: _activeUser,
       storedSession: stored,
       preChatCompleted: stored?.preChatCompleted ?? false,
+      deviceId: deviceId,
     );
     await _writeStoredSession(result.session);
     _session = result.session;
     return result;
   }
 
-  Future<WidgetSessionResult> submitPreChat(CerqlePreChatData preChat) async {
+  Future<WidgetSessionResult> submitPreChat(
+    CerqlePreChatData preChat, {
+    String? deviceId,
+  }) async {
     final current = requireSession();
     final active = _activeUser;
     final result = await _remoteDataSource.startSession(
@@ -57,6 +61,7 @@ final class _SessionCoordinator {
       ),
       storedSession: current,
       preChatCompleted: true,
+      deviceId: deviceId,
     );
     await _writeStoredSession(result.session);
     _session = result.session;

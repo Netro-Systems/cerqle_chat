@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-const _cerqleLogoAsset = 'assets/images/cerqle-icon.svg';
+const _cerqleLogoAsset = 'assets/images/cerqle-icon-purple-bg.svg';
 
 class CerqleBrandLogo extends StatelessWidget {
   const CerqleBrandLogo({super.key, this.imageKey, this.fit = BoxFit.contain});

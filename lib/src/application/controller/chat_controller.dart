@@ -27,6 +27,8 @@ class CerqleChatController with WidgetsBindingObserver {
   late final StreamController<CerqleChatState> _statesController;
   late final StreamController<CerqleChatEvent> _eventsController;
   final ChatStateMachine _stateMachine = ChatStateMachine();
+  final WidgetOneSignalService _oneSignalService =
+      WidgetOneSignalService.instance;
   Future<void>? _initializing;
   Future<void>? _pollInFlight;
   Future<void> _sendQueue = Future<void>.value();
@@ -36,9 +38,12 @@ class CerqleChatController with WidgetsBindingObserver {
   DateTime? _lastTypingSentAt;
   DateTime _lastActivity = DateTime.now();
   int _pollCursor = 0;
+  int? _conversationId;
   int _pollFailures = 0;
   int _sessionRevision = 0;
   Duration? _pollRetryAfter;
+  CerqleRealtimeConfig? _realtimeConfig;
+  bool _realtimeActive = false;
   bool _observingLifecycle = false;
   bool _disposed = false;
   bool _recoveryAttempted = false;
@@ -57,6 +62,9 @@ class CerqleChatController with WidgetsBindingObserver {
 
   /// Configuration owned by the backing client.
   CerqleConfig get config => _client.config;
+
+  /// Resolves the current OneSignal Push Subscription ID if enabled.
+  Future<String?> currentPushToken() => _oneSignalService.currentPushToken();
 
   /// Creates or restores the identity-scoped session.
   ///
@@ -89,7 +97,17 @@ class CerqleChatController with WidgetsBindingObserver {
       ),
     );
     try {
-      final result = await _client._startSession();
+      String? deviceId;
+      if (config.enableOneSignal && config.oneSignalAppId.isNotEmpty) {
+        await _oneSignalService.initialize(appId: config.oneSignalAppId);
+        final activeExternalId = _client._activeUser?.externalId;
+        if (activeExternalId != null && activeExternalId.isNotEmpty) {
+          await _oneSignalService.login(activeExternalId);
+        }
+        deviceId = await _oneSignalService.currentPushToken();
+      }
+
+      final result = await _client._startSession(deviceId: deviceId);
       _validatePreChatFields(result.widget);
       final preChatSatisfied =
           result.session.preChatCompleted ||
@@ -165,6 +183,8 @@ class CerqleChatController with WidgetsBindingObserver {
     _pollFailures = 0;
     _pollRetryAfter = null;
     _lastActivity = DateTime.now();
+    _conversationId = result.conversationId;
+    _realtimeConfig = result.widget.realtime;
     _emit(
       _state.copyWith(
         phase: CerqleChatPhase.ready,
@@ -180,6 +200,7 @@ class CerqleChatController with WidgetsBindingObserver {
       ),
     );
     _addEvent(const CerqleSessionReady());
+    unawaited(_syncRealtime());
     _schedulePoll();
   }
 
@@ -202,8 +223,13 @@ class CerqleChatController with WidgetsBindingObserver {
     _validatePreChatSubmission(widget, data);
     _emit(_state.copyWith(connection: CerqleConnectionState.connecting));
     try {
+      String? deviceId;
+      if (config.enableOneSignal && config.oneSignalAppId.isNotEmpty) {
+        deviceId = await _oneSignalService.currentPushToken();
+      }
       final result = await _client._submitPreChat(
         CerqlePreChatData(name: data.name?.trim(), email: data.email?.trim()),
+        deviceId: deviceId,
       );
       _validatePreChatFields(result.widget);
       await _acceptSession(result);
@@ -612,7 +638,18 @@ class CerqleChatController with WidgetsBindingObserver {
     _ensureNotDisposed();
     _cancelPoll();
     _sessionRevision++;
-    if (user == null) await _stopTypingBestEffort();
+    if (_realtimeActive) {
+      await _client._stopRealtime();
+      _realtimeActive = false;
+    }
+    _conversationId = null;
+    _realtimeConfig = null;
+    if (user == null) {
+      await _stopTypingBestEffort();
+      await _oneSignalService.logout();
+    } else if (user.externalId != null && user.externalId!.isNotEmpty) {
+      await _oneSignalService.login(user.externalId!);
+    }
     final changed = await _client._switchUser(user);
     if (!changed) return;
     _deferredVisitorPollMessages.clear();
@@ -637,7 +674,14 @@ class CerqleChatController with WidgetsBindingObserver {
     _ensureNotDisposed();
     _cancelPoll();
     _sessionRevision++;
+    if (_realtimeActive) {
+      await _client._stopRealtime();
+      _realtimeActive = false;
+    }
+    _conversationId = null;
+    _realtimeConfig = null;
     await _stopTypingBestEffort();
+    await _oneSignalService.logout();
     await _client._clearSession();
     _deferredVisitorPollMessages.clear();
     _pollCursor = 0;
@@ -685,11 +729,16 @@ class CerqleChatController with WidgetsBindingObserver {
     _pollingCoordinator.updateLifecycle(state);
     _diagnostic(CerqleDiagnosticKind.lifecycle);
     if (_pollingCoordinator.isForeground) {
+      unawaited(_syncRealtime());
       if (_hasLease && _state.phase == CerqleChatPhase.ready) {
         unawaited(refresh().catchError((_) {}));
       }
     } else {
       _typingIdleTimer?.cancel();
+      if (_realtimeActive) {
+        unawaited(_client._stopRealtime());
+        _realtimeActive = false;
+      }
     }
   }
 
@@ -697,6 +746,10 @@ class CerqleChatController with WidgetsBindingObserver {
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
+    if (_realtimeActive) {
+      await _client._stopRealtime();
+      _realtimeActive = false;
+    }
     _pollingCoordinator.dispose();
     _typingIdleTimer?.cancel();
     _deferredVisitorPollMessages.clear();
@@ -731,6 +784,7 @@ class CerqleChatController with WidgetsBindingObserver {
     if (_disposed) return;
     // Poll only while someone consumes state/events. This keeps headless and
     // hidden integrations from spending network and battery in the background.
+    unawaited(_syncRealtime());
     _schedulePoll();
   }
 
@@ -751,6 +805,74 @@ class CerqleChatController with WidgetsBindingObserver {
   void _expireAgentTyping() {
     if (_disposed || _state.agentTyping == null) return;
     _emit(_state.copyWith(agentTyping: null));
+  }
+
+  Future<void> _syncRealtime() async {
+    if (_disposed ||
+        !_hasLease ||
+        !_pollingCoordinator.isForeground ||
+        _state.phase != CerqleChatPhase.ready ||
+        _conversationId == null ||
+        _conversationId == 0 ||
+        _realtimeConfig == null ||
+        !_realtimeConfig!.isEnabled) {
+      if (_realtimeActive) {
+        await _client._stopRealtime();
+        _realtimeActive = false;
+      }
+      return;
+    }
+
+    await _client._startRealtime(
+      realtime: _realtimeConfig!,
+      conversationId: _conversationId!,
+      onConnected: () {
+        if (!_disposed && _state.phase == CerqleChatPhase.ready) {
+          unawaited(refresh().catchError((_) {}));
+        }
+      },
+      onMessageCreated: _handleRealtimeMessageCreated,
+      onTypingChanged: _handleRealtimeTypingChanged,
+      onHandoffUpdated: _handleRealtimeHandoffUpdated,
+      onError: (error, _) {
+        _diagnostic(
+          CerqleDiagnosticKind.connection,
+          exception: _asCerqleException(error),
+        );
+      },
+    );
+    _realtimeActive = true;
+  }
+
+  void _handleRealtimeMessageCreated(Object? payload) {
+    final message = const WidgetResponseDecoder().realtimeMessage(payload);
+    if (message == null) return;
+    final messages = _mergePollMessages(
+      _state.messages,
+      <CerqleMessage>[message],
+      emitReceivedEvents: true,
+    );
+    _emit(
+      _state.copyWith(
+        messages: messages,
+        pendingCount: _pendingCount(messages),
+      ),
+    );
+  }
+
+  void _handleRealtimeTypingChanged(Object? payload) {
+    final typing = const WidgetResponseDecoder().realtimeTyping(payload);
+    _emit(_state.copyWith(agentTyping: typing));
+    _pollingCoordinator.updateAgentTyping(
+      active: typing != null,
+      onExpired: _expireAgentTyping,
+    );
+  }
+
+  void _handleRealtimeHandoffUpdated(Object? payload) {
+    final handoff = const WidgetResponseDecoder().realtimeHandoff(payload);
+    if (handoff == null) return;
+    _updateHandoff(handoff);
   }
 
   void _observeLifecycle() {

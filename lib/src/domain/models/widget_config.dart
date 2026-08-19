@@ -6,6 +6,28 @@ enum CerqleLauncherPosition { bottomRight, bottomLeft, unknown }
 /// Pre-chat fields currently understood by the SDK.
 enum CerqlePreChatField { name, email, unknown }
 
+/// Public realtime settings returned by the widget session API.
+class CerqleRealtimeConfig {
+  /// Creates immutable realtime settings.
+  const CerqleRealtimeConfig({
+    required this.key,
+    required this.cluster,
+    required this.authEndpoint,
+  });
+
+  /// Public Pusher key for subscribing to widget conversation updates.
+  final String key;
+
+  /// Pusher cluster name.
+  final String cluster;
+
+  /// Widget-scoped private-channel authorization endpoint.
+  final Uri authEndpoint;
+
+  /// Whether realtime can be attempted with the current config.
+  bool get isEnabled => key.trim().isNotEmpty;
+}
+
 /// Public team-member presentation data returned by widget configuration.
 class CerqleTeamMember {
   /// Creates immutable team-member presentation data.
@@ -35,6 +57,7 @@ class CerqleWidgetConfig {
     required this.aiEnabled,
     required this.requiresPreChat,
     required List<CerqlePreChatField> preChatFields,
+    this.realtime,
     this.avatarUrl,
     this.launcherText,
     this.launcherLogoUrl,
@@ -83,6 +106,9 @@ class CerqleWidgetConfig {
 
   /// Required pre-chat fields.
   final List<CerqlePreChatField> preChatFields;
+
+  /// Optional realtime configuration for Pusher-backed conversation updates.
+  final CerqleRealtimeConfig? realtime;
 
   /// Server message shown outside working hours.
   final String? offlineMessage;

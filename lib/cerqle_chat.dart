@@ -3,6 +3,8 @@ library;
 
 export 'src/application/cerqle_runtime.dart'
     show CerqleChatController, CerqleClient;
+export 'src/application/services/widget_onesignal_service.dart'
+    show WidgetOneSignalService;
 export 'src/domain/contracts/session_store.dart'
     show CerqleSessionStore, CerqleStoredSession;
 export 'src/configuration/cerqle_config.dart';

@@ -24,6 +24,7 @@ void main() {
     );
 
     expect(result.session.visitorId, 'visitor-1');
+    expect(result.conversationId, 42);
     expect(result.messages.single.serverId, 4);
     expect(result.widget.title, 'Test support');
   });

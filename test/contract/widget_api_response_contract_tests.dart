@@ -119,7 +119,7 @@ void _registerResponseContractTests() {
         ),
       );
 
-      final malformedPoll = pollResponse()..remove('agent_typing');
+      final malformedPoll = pollResponse()..remove('messages');
       final pollApi = _remoteDataSource(
         baseUrl: Uri.parse('https://chat.example.com'),
         httpClient: _RecordingClient(

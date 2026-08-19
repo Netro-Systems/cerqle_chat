@@ -142,6 +142,7 @@ void registerIdentitySyncTests(CerqleConfig config) {
       config: const CerqleConfig(
         widgetKey: 'test-widget',
         apiBaseUrl: 'https://chat.example.com',
+        enableOneSignal: false,
         user: CerqleUser(name: 'Unverified display name'),
       ),
       httpClient: MockClient(
@@ -166,6 +167,7 @@ void registerIdentitySyncTests(CerqleConfig config) {
     const emptyUserConfig = CerqleConfig(
       widgetKey: 'test-widget',
       apiBaseUrl: 'https://chat.example.com/base/',
+      enableOneSignal: false,
       user: CerqleUser(),
       polling: CerqlePollingConfig(
         visibleInterval: Duration(minutes: 1),
@@ -228,6 +230,7 @@ void registerIdentitySyncTests(CerqleConfig config) {
     const unsignedConfig = CerqleConfig(
       widgetKey: 'test-widget',
       apiBaseUrl: 'https://chat.example.com/base/',
+      enableOneSignal: false,
       user: CerqleUser(
         externalId: 'customer-123',
         name: 'Jane Doe',

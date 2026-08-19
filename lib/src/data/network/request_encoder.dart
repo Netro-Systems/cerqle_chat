@@ -18,6 +18,7 @@ final class WidgetRequestEncoder {
     required String widgetKey,
     required CerqleUser? user,
     required CerqleStoredSession? storedSession,
+    String? deviceId,
   }) => <String, Object>{
     'key': widgetKey,
     if (storedSession != null) 'visitor_id': storedSession.visitorId,
@@ -26,6 +27,13 @@ final class WidgetRequestEncoder {
     if (user?.avatarUrl != null) 'avatar': user!.avatarUrl!.toString(),
     if (user?.externalId != null) 'external_id': user!.externalId!,
     if (user?.signature != null) 'user_hash': user!.signature!,
+    if (deviceId != null && deviceId.trim().isNotEmpty) ...<String, Object>{
+      'device_id': deviceId.trim(),
+      'onesignal_id': deviceId.trim(),
+      'push': <String, Object>{
+        'token': deviceId.trim(),
+      },
+    },
   };
 
   /// Encodes a text-send body.

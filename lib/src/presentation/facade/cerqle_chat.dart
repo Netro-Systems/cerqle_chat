@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../application/services/widget_onesignal_service.dart';
 import '../../application/cerqle_runtime.dart';
 import '../../configuration/cerqle_config.dart';
 import '../../domain/errors/cerqle_exception.dart';
@@ -9,12 +10,95 @@ import '../../domain/events/chat_event.dart';
 import '../screen/chat_screen.dart';
 import '../view/chat_view.dart';
 
-/// Static helpers for modal chat presentation and identity-scoped reset.
+/// Static helpers for modal chat presentation, push notifications, and reset.
 abstract final class CerqleChat {
   static final Map<String, Future<CerqleChatResult?>> _activePresentations =
       <String, Future<CerqleChatResult?>>{};
   static final Map<String, CerqleChatController> _ownedControllers =
       <String, CerqleChatController>{};
+  static StreamSubscription<Map<String, dynamic>>?
+      _notificationClickSubscription;
+  static void Function(Map<String, dynamic> payload)? _onNotificationTapped;
+  static CerqleConfig? _lastConfig;
+  static GlobalKey<NavigatorState>? _navigatorKey;
+
+  /// Initializes OneSignal push notification handlers for visitor chat.
+  ///
+  /// Call this in your host app's `main()` or splash screen:
+  /// ```dart
+  /// CerqleChat.initializeNotificationHandlers(
+  ///   config: config,
+  ///   navigatorKey: navigatorKey,
+  /// );
+  /// ```
+  static void initializeNotificationHandlers({
+    CerqleConfig? config,
+    GlobalKey<NavigatorState>? navigatorKey,
+    void Function(Map<String, dynamic> payload)? onNotificationTapped,
+  }) {
+    if (config != null) _lastConfig = config;
+    if (navigatorKey != null) _navigatorKey = navigatorKey;
+    if (onNotificationTapped != null) {
+      _onNotificationTapped = onNotificationTapped;
+    }
+
+    final appId =
+        config?.oneSignalAppId ?? CerqleConfig.defaultOneSignalAppId;
+    WidgetOneSignalService.instance.initialize(appId: appId);
+
+    _notificationClickSubscription?.cancel();
+    _notificationClickSubscription = WidgetOneSignalService
+        .instance.notificationClicks
+        .listen(_handleNotificationClick);
+  }
+
+  /// Sets or updates the custom notification tapped callback.
+  static void setOnNotificationTappedCallback(
+    void Function(Map<String, dynamic> payload) callback,
+  ) {
+    _onNotificationTapped = callback;
+  }
+
+  /// Opens the chatbox from a notification click.
+  static Future<CerqleChatResult?> openChatboxFromNotification({
+    BuildContext? context,
+    CerqleConfig? config,
+    Map<String, dynamic>? payload,
+  }) {
+    final effectiveConfig = config ?? _lastConfig;
+    if (effectiveConfig == null) {
+      throw const CerqleException(
+        code: CerqleErrorCode.configuration,
+        message: 'No CerqleConfig provided for notification opening.',
+        retryable: false,
+      );
+    }
+    final effectiveContext = context ?? _navigatorKey?.currentContext;
+    if (effectiveContext == null) {
+      throw const CerqleException(
+        code: CerqleErrorCode.configuration,
+        message: 'No BuildContext or navigatorKey available to open chat.',
+        retryable: false,
+      );
+    }
+
+    return open(effectiveContext, config: effectiveConfig);
+  }
+
+  static void _handleNotificationClick(Map<String, dynamic> payload) {
+    if (_onNotificationTapped != null) {
+      _onNotificationTapped!(payload);
+      return;
+    }
+
+    if (_navigatorKey?.currentContext != null && _lastConfig != null) {
+      openChatboxFromNotification(
+        context: _navigatorKey!.currentContext,
+        config: _lastConfig,
+        payload: payload,
+      );
+    }
+  }
 
   /// Opens at most one chat presentation for the configuration scope.
   ///

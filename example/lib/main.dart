@@ -11,11 +11,13 @@ import 'src/widgets/example_hero_card.dart';
 import 'src/widgets/integration_card.dart';
 
 Future<void> main() async {
-  await dotenv.load(fileName: '.env');
+  try {
+    await dotenv.load(fileName: '.env');
+  } catch (_) {}
   runApp(
     ExampleApp(
-      widgetKey: dotenv.get('CERQLE_WIDGET_KEY').trim(),
-      apiBaseUrl: dotenv.get('CERQLE_API_BASE_URL').trim(),
+      widgetKey: dotenv.maybeGet('CERQLE_WIDGET_KEY')?.trim() ?? '',
+      apiBaseUrl: dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://cerqle.com',
     ),
   );
 }
@@ -35,6 +37,7 @@ class ExampleApp extends StatefulWidget {
 }
 
 class _ExampleAppState extends State<ExampleApp> {
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   late final ExampleMediaAdapter _mediaAdapter = ExampleMediaAdapter();
   late final CerqleConfig _config = CerqleConfig(
     widgetKey: widget.widgetKey,
@@ -44,7 +47,17 @@ class _ExampleAppState extends State<ExampleApp> {
   );
 
   @override
+  void initState() {
+    super.initState();
+    CerqleChat.initializeNotificationHandlers(
+      config: _config,
+      navigatorKey: _navigatorKey,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) => MaterialApp(
+        navigatorKey: _navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'Cerqle Chat',
         theme: buildExampleTheme(),

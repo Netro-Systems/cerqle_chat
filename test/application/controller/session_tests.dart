@@ -69,7 +69,7 @@ void registerSessionTests(CerqleConfig config) {
 
       await controller.initialize();
 
-      expect(controller.state.widget?.primaryColorHex, '#ff762e');
+      expect(controller.state.widget?.primaryColorHex, '#3E2A49');
       await controller.dispose();
       await client.close();
     }

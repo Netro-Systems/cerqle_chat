@@ -6,7 +6,7 @@
 ![last commit](https://img.shields.io/github/last-commit/Netro-Systems/cerqle_chat)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-`cerqle_chat` is a Flutter package for adding Cerqle customer chat to Flutter apps. It includes secure visitor sessions, public widget API communication, foreground polling, message reconciliation, typed state and errors, and optional Material UI.
+`cerqle_chat` is a Flutter package for adding Cerqle customer chat to Flutter apps. It includes secure visitor sessions, public widget API communication, realtime Pusher channel synchronization, OneSignal push notifications, foreground polling, message reconciliation, typed state and errors, and customizable Material UI with Cerqle's signature branding.
 
 Native requests work only for widgets whose browser domain allowlist is empty; the SDK never spoofs browser `Origin` or `Referer` headers.
 
@@ -105,8 +105,7 @@ When a view, screen, or launcher creates its controller, it owns and disposes th
 
 ## Colors and branding
 
-API colors are enabled by default. Disable them to use Cerqle's built-in brand
-palette:
+API colors are enabled by default. Disable them to use Cerqle's built-in purple brand palette (`#3E2A49`, secondary `#8F5FA7`):
 
 ```dart
 final config = CerqleConfig(
@@ -115,15 +114,14 @@ final config = CerqleConfig(
 );
 ```
 
-Custom theme colors always take precedence, whether API colors are enabled or
-not:
+Custom theme colors always take precedence, whether API colors are enabled or not:
 
 ```dart
 final config = CerqleConfig(
   widgetKey: 'YOUR_WIDGET_KEY',
   useApiColors: false,
   theme: const CerqleThemeData(
-    primaryColor: Color(0xFF087F5B),
+    primaryColor: Color(0xFF3E2A49),
   ),
 );
 ```
@@ -143,41 +141,56 @@ final config = CerqleConfig(
 );
 ```
 
-Call `controller.updateUser(...)` whenever the host app switches accounts, and
-`controller.updateUser(null)` on logout. Logout stops polling, sends a
-best-effort typing-off update, deletes the active credential scope, and clears
-the in-memory conversation. It does not create a replacement anonymous session;
-the next `initialize()` or newly opened chat creates one. Sessions are securely
-isolated by canonical API base URL, widget key, and identity scope.
+Call `controller.updateUser(...)` whenever the host app switches accounts, and `controller.updateUser(null)` on logout. Logout stops polling and realtime streaming, sends a best-effort typing-off update, unlinks OneSignal device tags, deletes the active credential scope, and clears the in-memory conversation. It does not create a replacement anonymous session; the next `initialize()` or newly opened chat creates one. Sessions are securely isolated by canonical API base URL, widget key, and identity scope.
 
 Anonymous and correctly signed identities persist across launches. Unsigned profile-only sessions stay in memory so an unverified display name or email cannot become a durable identity key or leave unreachable secure-storage records.
+
+## Push notifications & Realtime sync
+
+The SDK includes built-in OneSignal push notification registration and Pusher realtime streaming.
+
+Initialize notification handlers in `main.dart` or during app startup:
+
+```dart
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  final config = CerqleConfig(
+    widgetKey: 'YOUR_WIDGET_KEY',
+    user: const CerqleUser(name: 'Demo User', email: 'user@demo.com'),
+  );
+
+  // Initialize push notification click handlers:
+  CerqleChat.initializeNotificationHandlers(
+    config: config,
+    navigatorKey: navigatorKey,
+  );
+
+  runApp(MyApp(navigatorKey: navigatorKey));
+}
+```
+
+When a visitor starts a session, the SDK automatically collects the OneSignal device/subscription ID and submits it with the session request (`device_id`). When support agents reply, push notifications delivered to the device will automatically open the chatbox when tapped.
+
+Realtime WebSocket channels are automatically established via Pusher (`private-widget-conversation.{conversationId}`) for instant message receipt and typing indicators.
 
 ## Current capabilities
 
 | Capability | Android/iOS | Web | macOS/Windows/Linux |
 |---|---:|---:|---:|
 | Anonymous and signed-user sessions | Yes | Yes* | Yes |
+| Pusher realtime streaming | Yes | Yes | Yes |
+| OneSignal push notifications | Yes | Yes | Yes |
 | Text, image/audio transport | Yes | Yes | Yes |
-| Foreground polling | Yes | Yes | Yes |
+| Foreground polling & auto-reconnect | Yes | Yes | Yes |
 | Typing and human handoff | Yes | Yes | Yes |
 | Prebuilt screen/view/launcher/modal UI | Yes | Yes | Yes |
 | Required name/email pre-chat | Yes | Yes | Yes |
 | Widget domain allowlist from native apps | Native policy pending | Supported by browser origin | Native policy pending |
 
 \* Web secure storage requires HTTPS or localhost and is scoped to the browser origin.
-
-The core upload API accepts validated bytes through `CerqleUpload`. Supply a
-`CerqleMediaAdapter` in `CerqleConfig` to enable the default composer's
-image and microphone controls while keeping picker and recorder plugins out of
-the core runtime. The example app contains a working `image_picker` + `record`
-adapter. Native multipart uploads deliberately omit browser `Origin` and
-`Referer`; the hosting WAF must allow `POST /widget/v1/messages`, and an edge
-HTML `406` is surfaced as `CerqleErrorCode.edgeRejected`.
-
-When the widget requires pre-chat, the built-in UI collects the configured name
-and/or email fields. Headless integrations submit them with
-`controller.submitPreChat(const CerqlePreChatData(...))`. The SDK reuses the
-token-bound session and stores only a completion flag, never the submitted PII.
 
 ## Delivery and error behavior
 
@@ -195,5 +208,5 @@ token-bound session and stores only a completion flag, never the submitted PII.
 flutter pub get
 dart format --output=none --set-exit-if-changed .
 flutter analyze
-(cd example && flutter test)
+flutter test
 ```

@@ -23,7 +23,12 @@ final class WidgetResponseDecoder {
     final json = _decodeObject(response);
     final visitorId = _requiredString(json, 'visitor_id');
     final token = _requiredString(json, 'token');
+    final conversationId = _intOrNull(json['conversation_id']) ??
+        _intOrNull(json['conversation']?['id']) ??
+        0;
     final configJson = _requiredObject(json, 'config');
+    final handoffObj = json['handoff'] ?? json['handover'];
+    if (handoffObj == null) throw _invalidResponse();
     return WidgetSessionResult(
       session: CerqleStoredSession(
         visitorId: visitorId,
@@ -31,28 +36,30 @@ final class WidgetResponseDecoder {
         savedAt: DateTime.now().toUtc(),
         preChatCompleted: preChatCompleted,
       ),
+      conversationId: conversationId,
       widget: _parseWidgetConfig(configJson),
       messages: _parseMessages(json['messages']),
-      supportAvailability: _parseAvailability(_requiredBool(json, 'online')),
-      handoff: _parseHandoff(json['handoff']),
+      supportAvailability: _parseAvailability(json['online'] == true),
+      handoff: _parseHandoff(handoffObj),
     );
   }
 
   /// Decodes one forward-poll response.
   WidgetPollResult poll(http.Response response) {
     final json = _decodeObject(response);
-    final typing = _requiredObject(json, 'agent_typing');
-    final isTyping = _requiredBool(typing, 'is_typing');
-    final typingName = typing['name'];
-    if (typingName != null && typingName is! String) {
-      throw _invalidResponse();
-    }
+    if (json['messages'] is! List<dynamic>) throw _invalidResponse();
+    final typing = json['agent_typing'];
+    final isTyping =
+        typing is Map<String, dynamic> && typing['is_typing'] == true;
+    final typingName = typing is Map<String, dynamic> ? typing['name'] : null;
+    final handoffObj = json['handoff'] ?? json['handover'];
+    if (handoffObj == null) throw _invalidResponse();
     return WidgetPollResult(
       messages: _parseMessages(json['messages']),
-      supportAvailability: _parseAvailability(_requiredBool(json, 'online')),
-      handoff: _parseHandoff(json['handoff']),
+      supportAvailability: _parseAvailability(json['online'] == true),
+      handoff: _parseHandoff(handoffObj),
       agentTyping: isTyping
-          ? CerqleAgentTyping(name: typingName as String?)
+          ? CerqleAgentTyping(name: typingName is String ? typingName : null)
           : null,
     );
   }
@@ -60,7 +67,7 @@ final class WidgetResponseDecoder {
   /// Decodes a visitor-send confirmation.
   WidgetSendResult send(http.Response response) {
     final json = _decodeObject(response);
-    final messageJson = _requiredObject(json, 'message');
+    final messageJson = _objectOrNull(json['message']) ?? json;
     final message = _parseMessage(messageJson);
     if (message == null) {
       throw const CerqleException(
@@ -69,15 +76,46 @@ final class WidgetResponseDecoder {
         retryable: false,
       );
     }
+    final handoffObj = json['handoff'] ?? json['handover'];
     return WidgetSendResult(
       message: message,
-      handoff: _parseHandoff(json['handoff']),
+      handoff: _parseHandoff(handoffObj),
     );
   }
 
   /// Decodes a handoff response.
-  CerqleHandoffState handoff(http.Response response) =>
-      _parseHandoff(_decodeObject(response)['handoff']);
+  CerqleHandoffState handoff(http.Response response) {
+    final json = _decodeObject(response);
+    return _parseHandoff(json['handoff'] ?? json['handover']);
+  }
+
+  /// Decodes the widget-safe realtime payload for one created message.
+  CerqleMessage? realtimeMessage(Object? value) {
+    if (value is! Map<String, dynamic>) return null;
+    final messageJson = value['message'];
+    if (messageJson is! Map<String, dynamic>) return null;
+    return _parseMessage(messageJson);
+  }
+
+  /// Decodes the widget-safe realtime payload for agent typing changes.
+  CerqleAgentTyping? realtimeTyping(Object? value) {
+    if (value is! Map<String, dynamic>) return null;
+    final typing = value['agent_typing'];
+    if (typing is! Map<String, dynamic>) return null;
+    final isTyping = typing['is_typing'];
+    if (isTyping is! bool) return null;
+    final name = typing['name'];
+    if (name != null && name is! String) return null;
+    return isTyping ? CerqleAgentTyping(name: name as String?) : null;
+  }
+
+  /// Decodes the widget-safe realtime payload for human-handoff updates.
+  CerqleHandoffState? realtimeHandoff(Object? value) {
+    if (value is! Map<String, dynamic>) return null;
+    final handoff = value['handoff'];
+    if (handoff is! Map<String, dynamic>) return null;
+    return _parseHandoff(handoff);
+  }
 
   Map<String, dynamic> _decodeObject(http.Response response) {
     try {
@@ -177,7 +215,10 @@ final class WidgetResponseDecoder {
 
   CerqleWidgetConfig _parseWidgetConfig(Map<String, dynamic> json) {
     final members = <CerqleTeamMember>[];
-    final rawMembers = json['team_members'];
+    final rawMembers = json['team_members'] ??
+        (json['available_team'] is Map<String, dynamic>
+            ? (json['available_team'] as Map<String, dynamic>)['members']
+            : null);
     if (rawMembers is List<dynamic>) {
       for (final item in rawMembers.whereType<Map<String, dynamic>>().take(5)) {
         final name = _stringOrNull(item['name']);
@@ -193,18 +234,19 @@ final class WidgetResponseDecoder {
     }
     final preChatFields = <CerqlePreChatField>[];
     final rawFields = json['prechat_fields'];
-    if (rawFields is! List<dynamic>) throw _invalidResponse();
-    for (final field in rawFields) {
-      preChatFields.add(switch (field) {
-        'name' => CerqlePreChatField.name,
-        'email' => CerqlePreChatField.email,
-        _ => CerqlePreChatField.unknown,
-      });
+    if (rawFields is List<dynamic>) {
+      for (final field in rawFields) {
+        preChatFields.add(switch (field) {
+          'name' => CerqlePreChatField.name,
+          'email' => CerqlePreChatField.email,
+          _ => CerqlePreChatField.unknown,
+        });
+      }
     }
-    final rawColor = _stringOrNull(json['primary_color']) ?? '#ff762e';
+    final rawColor = _stringOrNull(json['primary_color']) ?? '#3E2A49';
     final color = RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(rawColor)
         ? rawColor
-        : '#ff762e';
+        : '#3E2A49';
     return CerqleWidgetConfig(
       title: _stringOrNull(json['title']) ?? 'Chat with us',
       subtitle:
@@ -225,22 +267,38 @@ final class WidgetResponseDecoder {
       launcherLogoUrl: _safeRemoteUri(json['launcher_logo_url']),
       footerCompanyName: _stringOrNull(json['footer_company_name']) ?? 'Cerqle',
       teamMembers: members,
-      aiEnabled: _requiredBool(json, 'ai_enabled'),
-      requiresPreChat: _requiredBool(json, 'require_prechat'),
+      aiEnabled: json['ai_enabled'] == true,
+      requiresPreChat: json['require_prechat'] == true,
       preChatFields: preChatFields,
+      realtime: _parseRealtimeConfig(json['realtime']),
       offlineMessage: _stringOrNull(json['offline_message']),
     );
   }
 
+  CerqleRealtimeConfig? _parseRealtimeConfig(Object? value) {
+    if (value is! Map<String, dynamic>) return null;
+    final authEndpoint = _safeRemoteUri(value['auth_endpoint']);
+    if (authEndpoint == null) return null;
+    return CerqleRealtimeConfig(
+      key: _stringOrNull(value['key']) ?? '',
+      cluster: _stringOrNull(value['cluster']) ?? 'mt1',
+      authEndpoint: authEndpoint,
+    );
+  }
+
   CerqleHandoffState _parseHandoff(Object? value) {
-    if (value is! Map<String, dynamic>) throw _invalidResponse();
-    final enabled = _requiredBool(value, 'enabled');
-    final eligible = _requiredBool(value, 'eligible');
-    if (value['status'] is! String) throw _invalidResponse();
+    if (value is! Map<String, dynamic>) {
+      return const CerqleHandoffState.unavailable();
+    }
+    final enabled = value['enabled'] == true || value['available'] == true;
+    final eligible = value['eligible'] == true ||
+        (value['available'] == true && value['requested'] != true);
+    final statusStr = value['status'] as String? ??
+        (value['requested'] == true ? 'connected' : 'bot');
     if (!enabled) {
       return const CerqleHandoffState.unavailable();
     }
-    if (value['status'] == 'connected') {
+    if (statusStr == 'connected') {
       return const CerqleHandoffState(status: CerqleHandoffStatus.connected);
     }
     if (eligible) {
@@ -262,12 +320,6 @@ final class WidgetResponseDecoder {
     throw _invalidResponse();
   }
 
-  bool _requiredBool(Map<String, dynamic> json, String key) {
-    final value = json[key];
-    if (value is bool) return value;
-    throw _invalidResponse();
-  }
-
   CerqleException _invalidResponse() => const CerqleException(
     code: CerqleErrorCode.server,
     message: 'Cerqle returned an incomplete response.',
@@ -285,6 +337,12 @@ final class WidgetResponseDecoder {
       message: 'Cerqle returned an incomplete response.',
       retryable: false,
     );
+  }
+
+  int? _intOrNull(Object? value) {
+    if (value is int) return value;
+    if (value is String) return int.tryParse(value);
+    return null;
   }
 
   String? _stringOrNull(Object? value) => value is String ? value : null;
