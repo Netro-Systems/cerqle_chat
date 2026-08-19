@@ -1,0 +1,11 @@
+{
+  "name": "Cerqle Chat SDK",
+  "short_name": "Cerqle Chat",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+    "theme_color": "#3E2A49",
+  "description": "Demonstrates the Cerqle Flutter chat SDK.",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false
+}
