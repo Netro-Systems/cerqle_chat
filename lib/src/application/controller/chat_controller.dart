@@ -642,19 +642,19 @@ class CerqleChatController with WidgetsBindingObserver {
       await _client._stopRealtime();
       _realtimeActive = false;
     }
-    _conversationId = null;
-    _realtimeConfig = null;
     if (user == null) {
       await _stopTypingBestEffort();
-      await _oneSignalService.logout();
-    } else if (user.externalId != null && user.externalId!.isNotEmpty) {
-      await _oneSignalService.login(user.externalId!);
+      if (config.enableOneSignal) {
+        await _oneSignalService.logout();
+      }
     }
     final changed = await _client._switchUser(user);
     if (!changed) return;
     _deferredVisitorPollMessages.clear();
+    _conversationId = null;
     _pollCursor = 0;
     _recoveryAttempted = false;
+    _realtimeConfig = null;
     _emit(CerqleChatState.initial());
     if (user == null) return;
     _emit(
@@ -681,7 +681,9 @@ class CerqleChatController with WidgetsBindingObserver {
     _conversationId = null;
     _realtimeConfig = null;
     await _stopTypingBestEffort();
-    await _oneSignalService.logout();
+    if (config.enableOneSignal) {
+      await _oneSignalService.logout();
+    }
     await _client._clearSession();
     _deferredVisitorPollMessages.clear();
     _pollCursor = 0;

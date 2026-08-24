@@ -11,6 +11,9 @@ void main() {
     final controller = CerqleChatController(client: client);
 
     expect(controller.config, same(config));
+    expect(config.oneSignalAppId, CerqleConfig.defaultOneSignalAppId);
+    expect(config.enableOneSignal, isTrue);
+    expect(WidgetOneSignalService.instance, isNotNull);
 
     controller.dispose();
     client.close();

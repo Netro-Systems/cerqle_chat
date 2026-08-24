@@ -10,54 +10,49 @@ import 'src/widgets/example_brand_header.dart';
 import 'src/widgets/example_hero_card.dart';
 import 'src/widgets/integration_card.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 Future<void> main() async {
-  try {
-    await dotenv.load(fileName: '.env');
-  } catch (_) {}
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: '.env');
+  final widgetKey = dotenv.get('CERQLE_WIDGET_KEY').trim();
+  final config = CerqleConfig(
+    widgetKey: widgetKey,
+    apiBaseUrl: dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://cerqle.ai',
+    user: const CerqleUser(name: 'Demo User', email: 'user@demo.com'),
+  );
+
+  // Initialize push notification handlers
+  CerqleChat.initializeNotificationHandlers(
+    config: config,
+    navigatorKey: navigatorKey,
+  );
+
   runApp(
-    ExampleApp(
-      widgetKey: dotenv.maybeGet('CERQLE_WIDGET_KEY')?.trim() ?? '',
-      apiBaseUrl: dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://cerqle.com',
-    ),
+    ExampleApp(config: config),
   );
 }
 
 class ExampleApp extends StatefulWidget {
-  const ExampleApp({
-    super.key,
-    required this.widgetKey,
-    required this.apiBaseUrl,
-  });
+  const ExampleApp({super.key, required this.config});
 
-  final String widgetKey;
-  final String apiBaseUrl;
+  final CerqleConfig config;
 
   @override
   State<ExampleApp> createState() => _ExampleAppState();
 }
 
 class _ExampleAppState extends State<ExampleApp> {
-  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
   late final ExampleMediaAdapter _mediaAdapter = ExampleMediaAdapter();
   late final CerqleConfig _config = CerqleConfig(
-    widgetKey: widget.widgetKey,
-    apiBaseUrl: widget.apiBaseUrl,
-    user: const CerqleUser(name: 'Demo User', email: 'user@demo.com'),
+    widgetKey: widget.config.widgetKey,
+    user: widget.config.user,
     mediaAdapter: _mediaAdapter,
   );
 
   @override
-  void initState() {
-    super.initState();
-    CerqleChat.initializeNotificationHandlers(
-      config: _config,
-      navigatorKey: _navigatorKey,
-    );
-  }
-
-  @override
   Widget build(BuildContext context) => MaterialApp(
-        navigatorKey: _navigatorKey,
+        navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'Cerqle Chat',
         theme: buildExampleTheme(),

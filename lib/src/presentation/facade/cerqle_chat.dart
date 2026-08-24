@@ -45,6 +45,9 @@ abstract final class CerqleChat {
     final appId =
         config?.oneSignalAppId ?? CerqleConfig.defaultOneSignalAppId;
     WidgetOneSignalService.instance.initialize(appId: appId);
+    if (config?.enableOneSignal != false) {
+      WidgetOneSignalService.instance.requestPermission();
+    }
 
     _notificationClickSubscription?.cancel();
     _notificationClickSubscription = WidgetOneSignalService

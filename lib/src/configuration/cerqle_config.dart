@@ -22,7 +22,7 @@ class CerqleConfig {
   /// Creates package configuration for one Cerqle widget.
   const CerqleConfig({
     required this.widgetKey,
-    this.apiBaseUrl = 'https://cerqle.com',
+    this.apiBaseUrl = 'https://cerqle.ai',
     this.user,
     this.theme,
     this.useApiColors = true,
@@ -37,7 +37,7 @@ class CerqleConfig {
 
   /// Default OneSignal App ID used across Cerqle ecosystem.
   static const String defaultOneSignalAppId =
-      'b9113548-23d3-4540-9320-6ef5023d2ed3';
+      'd507871c-ac7a-4aba-aa2d-ee93a0102f17';
 
   /// Public widget routing key issued by Cerqle.
   final String widgetKey;

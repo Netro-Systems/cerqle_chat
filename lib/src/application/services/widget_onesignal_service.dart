@@ -28,18 +28,23 @@ final class WidgetOneSignalService {
     if (appId.trim().isEmpty) return;
     if (_initialized && _initializedAppId == appId) return;
 
+    _initialized = true;
+    _initializedAppId = appId;
+
     try {
-      try {
-        if (kDebugMode) {
-          OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
-        }
-      } catch (_) {}
+      if (kDebugMode) {
+        OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+      }
       OneSignal.initialize(appId);
-      try {
-        OneSignal.Notifications.addClickListener(_onNotificationClick);
-      } catch (_) {}
-      _initialized = true;
-      _initializedAppId = appId;
+      OneSignal.Notifications.addClickListener(_onNotificationClick);
+      OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+        if (kDebugMode) {
+          debugPrint(
+            '[Cerqle] OneSignal foreground notification received: ${event.notification.title}',
+          );
+        }
+        event.notification.display();
+      });
     } catch (e) {
       if (kDebugMode) {
         debugPrint('[Cerqle] OneSignal initialization failed: $e');
@@ -54,7 +59,7 @@ final class WidgetOneSignalService {
     if (!_initialized) return;
     try {
       await OneSignal.User.pushSubscription.optIn();
-      await OneSignal.Notifications.requestPermission(false);
+      await OneSignal.Notifications.requestPermission(true);
     } catch (_) {}
   }
 
@@ -83,19 +88,12 @@ final class WidgetOneSignalService {
     if (!_initialized) return null;
 
     if (ensureReady) {
-      try {
-        await requestPermission();
-      } catch (_) {}
+      await requestPermission();
     }
 
     try {
-      for (var attempt = 1; attempt <= 8; attempt++) {
-        String? subscriptionId;
-        try {
-          subscriptionId = OneSignal.User.pushSubscription.id;
-        } catch (_) {
-          return null;
-        }
+      for (var attempt = 1; attempt <= 15; attempt++) {
+        final subscriptionId = OneSignal.User.pushSubscription.id;
         if (subscriptionId != null && subscriptionId.isNotEmpty) {
           if (kDebugMode) {
             debugPrint(
@@ -104,7 +102,7 @@ final class WidgetOneSignalService {
           }
           return subscriptionId;
         }
-        await Future<void>.delayed(const Duration(milliseconds: 350));
+        await Future<void>.delayed(const Duration(milliseconds: 400));
       }
       return null;
     } catch (_) {
