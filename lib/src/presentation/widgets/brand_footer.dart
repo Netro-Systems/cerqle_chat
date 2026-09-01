@@ -18,9 +18,9 @@ class BrandFooter extends StatelessWidget {
     final configured = companyName?.trim();
     final brand = configured?.isNotEmpty == true ? configured! : 'Cerqle';
     final baseStyle = Theme.of(context).textTheme.labelSmall?.copyWith(
-      color: colors.onSurfaceMuted.withValues(alpha: 0.7),
-      fontSize: 11,
-    );
+          color: colors.onSurfaceMuted.withValues(alpha: 0.7),
+          fontSize: 11,
+        );
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(

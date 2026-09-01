@@ -20,7 +20,6 @@ class _Composer extends StatefulWidget {
 }
 
 class _ComposerState extends State<_Composer> {
-  static const String _imageIcon = 'assets/icons/image.png';
   static const String _microphoneIcon = 'assets/icons/microphone.png';
   static const String _sendIcon = 'assets/icons/send.png';
 
@@ -33,6 +32,7 @@ class _ComposerState extends State<_Composer> {
   bool _mediaBusy = false;
   bool _isRecording = false;
   CerqleUpload? _pendingImage;
+  CerqleUpload? _pendingFile;
   CerqleUpload? _pendingAudio;
 
   @override
@@ -43,7 +43,7 @@ class _ComposerState extends State<_Composer> {
         border: Border(top: BorderSide(color: widget.colors.outline)),
       ),
       child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 8),
+        padding: const EdgeInsetsDirectional.fromSTEB(14, 8, 14, 0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -53,6 +53,13 @@ class _ComposerState extends State<_Composer> {
                 colors: widget.colors,
                 sending: _mediaBusy,
                 onDiscard: _discardPendingImage,
+              ),
+            if (_pendingFile != null)
+              _FilePreview(
+                upload: _pendingFile!,
+                colors: widget.colors,
+                sending: _mediaBusy,
+                onDiscard: _discardPendingFile,
               ),
             if (_pendingAudio != null)
               _AudioPreview(
@@ -78,8 +85,10 @@ class _ComposerState extends State<_Composer> {
                 showAudio: widget.audioEnabled,
                 mediaBusy: _mediaBusy,
                 pendingImage: _pendingImage != null,
+                pendingFile: _pendingFile != null,
                 pendingAudio: _pendingAudio != null,
                 canSend: _canSend,
+                onAttachment: _openAttachmentPicker,
                 onPickImage: _pickImage,
                 onToggleRecording: _toggleRecording,
                 onTextChanged: _onTextChanged,
@@ -151,14 +160,102 @@ class _ComposerState extends State<_Composer> {
   bool get _canSend =>
       !_mediaBusy &&
       !_isRecording &&
-      (_hasText || _pendingImage != null || _pendingAudio != null);
+      (_hasText || _pendingImage != null || _pendingFile != null || _pendingAudio != null);
 
-  Future<void> _pickImage() async {
+  Future<void> _openAttachmentPicker() async {
+    if (_mediaBusy || _isRecording) return;
+    final option = await showModalBottomSheet<AttachmentOption>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (_) => AttachmentPickerSheet(
+        showDocument: true,
+        showCamera: widget.imagesEnabled,
+        showGallery: widget.imagesEnabled,
+        showAudio: widget.audioEnabled,
+      ),
+    );
+
+    if (option == null || !mounted) return;
+
+    switch (option) {
+      case AttachmentOption.camera:
+        await _pickImage(source: ImageSource.camera);
+      case AttachmentOption.gallery:
+        await _pickImage(source: ImageSource.gallery);
+      case AttachmentOption.audio:
+        await _toggleRecording();
+      case AttachmentOption.document:
+        await _pickDocument();
+    }
+  }
+
+  Future<void> _pickDocument() async {
     final adapter = _mediaAdapter;
     CerqleDebugUploadLogger.selectionStarted();
     setState(() => _mediaBusy = true);
     try {
-      final upload = await adapter.pickImage();
+      final upload = await adapter.pickDocument();
+      if (!mounted) return;
+      if (upload == null) {
+        CerqleDebugUploadLogger.selectionCancelled();
+      } else {
+        CerqleDebugUploadLogger.selectionReady(
+          sizeBytes: upload.bytes.length,
+          mimeType: upload.mimeType,
+        );
+        setState(() => _pendingFile = upload);
+      }
+    } on Object catch (error) {
+      CerqleDebugUploadLogger.selectionFailed(error);
+      if (mounted) _showMediaError(error, 'The document could not be selected.');
+    } finally {
+      if (mounted) setState(() => _mediaBusy = false);
+    }
+  }
+
+  Future<void> _sendPendingFile() async {
+    final upload = _pendingFile;
+    if (upload == null) return;
+    CerqleDebugUploadLogger.sendRequested(
+      sizeBytes: upload.bytes.length,
+      mimeType: upload.mimeType,
+    );
+    final caption = _textController.text.trim();
+    _textController.clear();
+    setState(() {
+      _mediaBusy = true;
+      _hasText = false;
+      _pendingFile = null;
+    });
+    try {
+      await widget.controller.sendFile(
+        upload,
+        caption: caption.isEmpty ? null : caption,
+      );
+      CerqleDebugUploadLogger.sendConfirmed();
+    } on Object catch (error) {
+      if (error is CerqleException) {
+        CerqleDebugUploadLogger.failed('file_upload', error);
+      } else {
+        CerqleDebugUploadLogger.unexpectedFailure('file_upload', error);
+      }
+      if (mounted) _showMediaError(error, 'The file could not be sent.');
+    } finally {
+      if (mounted) setState(() => _mediaBusy = false);
+    }
+  }
+
+  void _discardPendingFile() => setState(() => _pendingFile = null);
+
+  Future<void> _pickImage({ImageSource source = ImageSource.gallery}) async {
+    final adapter = _mediaAdapter;
+    CerqleDebugUploadLogger.selectionStarted();
+    setState(() => _mediaBusy = true);
+    try {
+      final upload = adapter is _DefaultMediaAdapter
+          ? await adapter.pickImage(source: source)
+          : await adapter.pickImage();
       if (!mounted) return;
       if (upload == null) {
         CerqleDebugUploadLogger.selectionCancelled();
@@ -295,14 +392,18 @@ class _ComposerState extends State<_Composer> {
 
   void _showMediaError(Object error, String fallback) {
     final message = error is CerqleException ? error.message : fallback;
-    ScaffoldMessenger.maybeOf(
-      context,
-    )?.showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   void _send() {
     if (_pendingImage != null) {
       unawaited(_sendPendingImage());
+      return;
+    }
+    if (_pendingFile != null) {
+      unawaited(_sendPendingFile());
       return;
     }
     if (_pendingAudio != null) {
@@ -321,12 +422,10 @@ class _ComposerState extends State<_Composer> {
       await widget.controller.sendText(text);
     } on Object catch (error) {
       if (!mounted) return;
-      final message = error is CerqleException
-          ? error.message
-          : 'The message could not be sent.';
-      ScaffoldMessenger.maybeOf(
-        context,
-      )?.showSnackBar(SnackBar(content: Text(message)));
+      final message = error is CerqleException ? error.message : 'The message could not be sent.';
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(message)),
+      );
     }
   }
 
@@ -356,8 +455,10 @@ class _TextComposer extends StatelessWidget {
     required this.showAudio,
     required this.mediaBusy,
     required this.pendingImage,
+    required this.pendingFile,
     required this.pendingAudio,
     required this.canSend,
+    required this.onAttachment,
     required this.onPickImage,
     required this.onToggleRecording,
     required this.onTextChanged,
@@ -371,8 +472,10 @@ class _TextComposer extends StatelessWidget {
   final bool showAudio;
   final bool mediaBusy;
   final bool pendingImage;
+  final bool pendingFile;
   final bool pendingAudio;
   final bool canSend;
+  final VoidCallback onAttachment;
   final VoidCallback onPickImage;
   final VoidCallback onToggleRecording;
   final ValueChanged<String> onTextChanged;
@@ -397,13 +500,7 @@ class _TextComposer extends StatelessWidget {
               minLines: 1,
               maxLines: 4,
               maxLength: 4000,
-              buildCounter:
-                  (
-                    _, {
-                    required currentLength,
-                    required isFocused,
-                    maxLength,
-                  }) => null,
+              buildCounter: (_, {required currentLength, required isFocused, maxLength}) => null,
               textCapitalization: TextCapitalization.sentences,
               decoration: InputDecoration(
                 hintText: 'Type your message…',
@@ -427,14 +524,14 @@ class _TextComposer extends StatelessWidget {
               children: <Widget>[
                 if (showImage)
                   _ComposerIconButton(
-                    tooltip: 'Attach image',
-                    semanticLabel: 'Attach image',
-                    onPressed: mediaBusy || pendingAudio ? null : onPickImage,
+                    tooltip: 'Attach file',
+                    semanticLabel: 'Attach file',
+                    onPressed: mediaBusy || pendingAudio ? null : onAttachment,
                     padding: EdgeInsets.zero,
-                    icon: _ComposerAssetIcon(
-                      assetName: _ComposerState._imageIcon,
+                    icon: Icon(
+                      Icons.attach_file_rounded,
                       color: mediaIconColor,
-                      size: 21,
+                      size: 22,
                     ),
                   ),
                 SizedBox(width: showImage && showAudio ? 8 : 0),
@@ -442,7 +539,7 @@ class _TextComposer extends StatelessWidget {
                   _ComposerIconButton(
                     tooltip: 'Record voice message',
                     semanticLabel: 'Record voice message',
-                    onPressed: mediaBusy || pendingImage || pendingAudio
+                    onPressed: mediaBusy || pendingImage || pendingFile || pendingAudio
                         ? null
                         : onToggleRecording,
                     padding: EdgeInsets.zero,
@@ -544,8 +641,7 @@ class _RecordingComposer extends StatelessWidget {
                       const SizedBox(width: 8),
                       Text(
                         _formatRecordingDuration(elapsed),
-                        style: Theme.of(context).textTheme.labelMedium
-                            ?.copyWith(
+                        style: Theme.of(context).textTheme.labelMedium?.copyWith(
                               color: colors.onPrimary,
                               fontWeight: FontWeight.w700,
                             ),
@@ -710,7 +806,7 @@ class _ComposerAssetIcon extends StatelessWidget {
   const _ComposerAssetIcon({
     required this.assetName,
     required this.color,
-    this.size = 16,
+    required this.size,
   });
 
   final String assetName;
@@ -718,20 +814,18 @@ class _ComposerAssetIcon extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    return Image.asset(
-      assetName,
-      color: color,
-      package: 'cerqle_chat',
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-    );
-  }
+  Widget build(BuildContext context) => Image.asset(
+        assetName,
+        package: 'cerqle_chat',
+        width: size,
+        height: size,
+        color: color,
+        errorBuilder: (_, __, ___) => Icon(Icons.image, size: size, color: color),
+      );
 }
 
 String _formatRecordingDuration(Duration duration) {
-  final minutes = duration.inMinutes.remainder(60);
+  final minutes = duration.inMinutes.remainder(60).toString().padLeft(2, '0');
   final seconds = duration.inSeconds.remainder(60).toString().padLeft(2, '0');
   return '$minutes:$seconds';
 }

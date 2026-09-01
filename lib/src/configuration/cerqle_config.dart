@@ -36,8 +36,7 @@ class CerqleConfig {
   });
 
   /// Default OneSignal App ID used across Cerqle ecosystem.
-  static const String defaultOneSignalAppId =
-      'd507871c-ac7a-4aba-aa2d-ee93a0102f17';
+  static const String defaultOneSignalAppId = 'd507871c-ac7a-4aba-aa2d-ee93a0102f17';
 
   /// Public widget routing key issued by Cerqle.
   final String widgetKey;

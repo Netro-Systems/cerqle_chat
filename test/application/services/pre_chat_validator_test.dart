@@ -34,8 +34,7 @@ void main() {
   });
 }
 
-CerqleWidgetConfig _widget(List<CerqlePreChatField> fields) =>
-    CerqleWidgetConfig(
+CerqleWidgetConfig _widget(List<CerqlePreChatField> fields) => CerqleWidgetConfig(
       title: 'Support',
       subtitle: 'Online',
       welcomeMessage: 'Hello',

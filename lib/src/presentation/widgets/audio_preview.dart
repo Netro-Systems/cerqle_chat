@@ -89,56 +89,53 @@ class _AudioPreviewState extends State<_AudioPreview> {
 
   @override
   Widget build(BuildContext context) => Container(
-    key: const ValueKey<String>('cerqle-audio-preview'),
-    margin: const EdgeInsets.only(bottom: 8),
-    padding: const EdgeInsets.all(8),
-    decoration: BoxDecoration(
-      color: widget.colors.surfaceMuted,
-      border: Border.all(color: widget.colors.outline),
-      borderRadius: BorderRadius.circular(12),
-    ),
-    child: Row(
-      children: <Widget>[
-        StreamBuilder<PlayerState>(
-          stream: _player.playerStateStream,
-          builder: (context, snapshot) {
-            final state = snapshot.data;
-            final playing = state?.playing ?? false;
-            final loading =
-                !_ready ||
-                state?.processingState == ProcessingState.loading ||
-                state?.processingState == ProcessingState.buffering;
-            return IconButton.filledTonal(
-              tooltip: playing ? 'Pause voice preview' : 'Play voice preview',
-              onPressed: loading || _failed || widget.sending
-                  ? null
-                  : _togglePlayback,
-              icon: loading
-                  ? const Icon(Icons.graphic_eq_rounded)
-                  : Icon(
-                      playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                    ),
-              style: IconButton.styleFrom(
-                foregroundColor: widget.colors.primary,
-                disabledForegroundColor: widget.colors.onSurfaceMuted,
+        key: const ValueKey<String>('cerqle-audio-preview'),
+        margin: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.all(8),
+        decoration: BoxDecoration(
+          color: widget.colors.surfaceMuted,
+          border: Border.all(color: widget.colors.outline),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: <Widget>[
+            StreamBuilder<PlayerState>(
+              stream: _player.playerStateStream,
+              builder: (context, snapshot) {
+                final state = snapshot.data;
+                final playing = state?.playing ?? false;
+                final loading = !_ready ||
+                    state?.processingState == ProcessingState.loading ||
+                    state?.processingState == ProcessingState.buffering;
+                return IconButton.filledTonal(
+                  tooltip: playing ? 'Pause voice preview' : 'Play voice preview',
+                  onPressed: loading || _failed || widget.sending ? null : _togglePlayback,
+                  icon: loading
+                      ? const Icon(Icons.graphic_eq_rounded)
+                      : Icon(
+                          playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                        ),
+                  style: IconButton.styleFrom(
+                    foregroundColor: widget.colors.primary,
+                    disabledForegroundColor: widget.colors.onSurfaceMuted,
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                _failed ? 'Audio preview unavailable' : widget.upload.filename,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-            );
-          },
+            ),
+            IconButton(
+              tooltip: 'Discard voice message',
+              onPressed: widget.sending ? null : widget.onDiscard,
+              icon: const Icon(Icons.close),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            _failed ? 'Audio preview unavailable' : widget.upload.filename,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ),
-        IconButton(
-          tooltip: 'Discard voice message',
-          onPressed: widget.sending ? null : widget.onDiscard,
-          icon: const Icon(Icons.close),
-        ),
-      ],
-    ),
-  );
+      );
 }

@@ -1,8 +1,7 @@
 part of 'chat_widgets_test.dart';
 
 void registerViewStateTests(CerqleConfig config) {
-  testWidgets('embedded view shows only an accessible neutral shimmer',
-      (tester) async {
+  testWidgets('embedded view shows only an accessible neutral shimmer', (tester) async {
     final response = Completer<http.Response>();
     final runtime = _runtime(
       config,
@@ -56,8 +55,7 @@ void registerViewStateTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('loading shimmer becomes static when motion is reduced',
-      (tester) async {
+  testWidgets('loading shimmer becomes static when motion is reduced', (tester) async {
     final response = Completer<http.Response>();
     final runtime = _runtime(
       config,
@@ -97,8 +95,7 @@ void registerViewStateTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('loading shimmer fits a short embedded container',
-      (tester) async {
+  testWidgets('loading shimmer fits a short embedded container', (tester) async {
     final response = Completer<http.Response>();
     final runtime = _runtime(
       config,
@@ -131,8 +128,7 @@ void registerViewStateTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('ready empty view renders welcome text and composer semantics',
-      (tester) async {
+  testWidgets('ready empty view renders welcome text and composer semantics', (tester) async {
     var sendCalls = 0;
     final runtime = _runtime(
       config,
@@ -176,7 +172,7 @@ void registerViewStateTests(CerqleConfig config) {
       find.byKey(const ValueKey<String>('cerqle-support-logo')).first,
     );
     final supportLogoAsset = supportLogo.bytesLoader as SvgAssetLoader;
-    expect(supportLogoAsset.assetName, 'assets/images/cerqle-icon.svg');
+    expect(supportLogoAsset.assetName, 'assets/images/cerqle-icon-purple-bg.svg');
     expect(supportLogoAsset.packageName, 'cerqle_chat');
     expect(find.bySemanticsLabel('Send message'), findsOneWidget);
     expect(
@@ -253,8 +249,7 @@ void registerViewStateTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('normal message delivery does not show sending or sent labels',
-      (tester) async {
+  testWidgets('normal message delivery does not show sending or sent labels', (tester) async {
     final sendResponse = Completer<http.Response>();
     final runtime = _runtime(
       config,
@@ -305,6 +300,7 @@ void registerViewStateTests(CerqleConfig config) {
 
     expect(find.text('Sending'), findsNothing);
     expect(find.text('Sent'), findsNothing);
+    expect(find.byIcon(Icons.check), findsOneWidget);
     expect(
       runtime.controller.state.messages.single.status,
       CerqleMessageStatus.sent,
@@ -314,13 +310,50 @@ void registerViewStateTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('pending image upload renders local timeline preview',
-      (tester) async {
+  testWidgets('shows focused double checkmark for read/seen outbound message', (tester) async {
+    final runtime = _runtime(
+      config,
+      MockClient((request) async {
+        if (request.url.path.endsWith('/session')) {
+          return http.Response(
+            jsonEncode(sessionResponse(messages: <Map<String, Object?>>[
+              message(
+                id: 1,
+                role: 'visitor',
+                body: 'Hello seen message',
+                sentBy: 'human',
+              )..['status'] = 'seen',
+            ])),
+            200,
+          );
+        }
+        return http.Response(jsonEncode(pollResponse()), 200);
+      }),
+    );
+
+    await tester.pumpWidget(_app(
+      CerqleChatView(config: config, controller: runtime.controller),
+    ));
+    await tester.pump();
+    await tester.pump();
+
+    final iconFinder = find.byIcon(Icons.done_all);
+    expect(iconFinder, findsOneWidget);
+    final icon = tester.widget<Icon>(iconFinder);
+    expect(icon.color, equals(Colors.white));
+    expect(runtime.controller.state.messages.single.isSeen, isTrue);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
+  testWidgets('pending image upload renders local timeline preview', (tester) async {
     final sendResponse = Completer<http.Response>();
     final mediaAdapter = _FakeMediaAdapter();
     final mediaConfig = CerqleConfig(
       widgetKey: config.widgetKey,
       apiBaseUrl: config.apiBaseUrl,
+      enableOneSignal: false,
       polling: config.polling,
       mediaAdapter: mediaAdapter,
     );
@@ -333,8 +366,7 @@ void registerViewStateTests(CerqleConfig config) {
         if (request.url.path.endsWith('/typing')) {
           return http.Response('{"ok":true}', 200);
         }
-        if (request.method == 'POST' &&
-            request.url.path.endsWith('/messages')) {
+        if (request.method == 'POST' && request.url.path.endsWith('/messages')) {
           return sendResponse.future;
         }
         return http.Response(jsonEncode(pollResponse()), 200);
@@ -349,8 +381,10 @@ void registerViewStateTests(CerqleConfig config) {
     ));
     await tester.pump();
     await tester.pump();
-    await tester.tap(find.bySemanticsLabel('Attach image'));
-    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('Attach file'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gallery'));
+    await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Send message'));
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -363,8 +397,7 @@ void registerViewStateTests(CerqleConfig config) {
       find.byKey(const ValueKey<String>('cerqle-image-preview')),
       findsNothing,
     );
-    expect(runtime.controller.state.messages.single.status,
-        CerqleMessageStatus.pending);
+    expect(runtime.controller.state.messages.single.status, CerqleMessageStatus.pending);
 
     sendResponse.complete(
       http.Response(
@@ -390,10 +423,8 @@ void registerViewStateTests(CerqleConfig config) {
     );
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(runtime.controller.state.messages.single.status,
-        CerqleMessageStatus.sent);
-    expect(runtime.controller.state.messages.single.localUpload?.filename,
-        'photo.png');
+    expect(runtime.controller.state.messages.single.status, CerqleMessageStatus.sent);
+    expect(runtime.controller.state.messages.single.localUpload?.filename, 'photo.png');
     expect(
       find.byKey(const ValueKey<String>('cerqle-local-image-preview')),
       findsOneWidget,
@@ -403,12 +434,12 @@ void registerViewStateTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('failed image upload keeps local preview with error icon',
-      (tester) async {
+  testWidgets('failed image upload keeps local preview with error icon', (tester) async {
     final mediaAdapter = _FakeMediaAdapter();
     final mediaConfig = CerqleConfig(
       widgetKey: config.widgetKey,
       apiBaseUrl: config.apiBaseUrl,
+      enableOneSignal: false,
       polling: config.polling,
       mediaAdapter: mediaAdapter,
     );
@@ -421,8 +452,7 @@ void registerViewStateTests(CerqleConfig config) {
         if (request.url.path.endsWith('/typing')) {
           return http.Response('{"ok":true}', 200);
         }
-        if (request.method == 'POST' &&
-            request.url.path.endsWith('/messages')) {
+        if (request.method == 'POST' && request.url.path.endsWith('/messages')) {
           throw http.ClientException('connection dropped after upload');
         }
         return http.Response(jsonEncode(pollResponse()), 200);
@@ -437,8 +467,10 @@ void registerViewStateTests(CerqleConfig config) {
     ));
     await tester.pump();
     await tester.pump();
-    await tester.tap(find.bySemanticsLabel('Attach image'));
-    await tester.pump();
+    await tester.tap(find.bySemanticsLabel('Attach file'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Gallery'));
+    await tester.pumpAndSettle();
     await tester.tap(find.bySemanticsLabel('Send message'));
     await tester.pump(const Duration(milliseconds: 100));
 
@@ -450,20 +482,19 @@ void registerViewStateTests(CerqleConfig config) {
       find.byKey(const ValueKey<String>('cerqle-local-image-error')),
       findsOneWidget,
     );
-    expect(runtime.controller.state.messages.single.status,
-        CerqleMessageStatus.unconfirmed);
+    expect(runtime.controller.state.messages.single.status, CerqleMessageStatus.unconfirmed);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await runtime.dispose();
   });
 
-  testWidgets('pending audio upload renders local timeline preview',
-      (tester) async {
+  testWidgets('pending audio upload renders local timeline preview', (tester) async {
     final sendResponse = Completer<http.Response>();
     final mediaAdapter = _FakeMediaAdapter();
     final mediaConfig = CerqleConfig(
       widgetKey: config.widgetKey,
       apiBaseUrl: config.apiBaseUrl,
+      enableOneSignal: false,
       polling: config.polling,
       mediaAdapter: mediaAdapter,
     );
@@ -476,8 +507,7 @@ void registerViewStateTests(CerqleConfig config) {
         if (request.url.path.endsWith('/typing')) {
           return http.Response('{"ok":true}', 200);
         }
-        if (request.method == 'POST' &&
-            request.url.path.endsWith('/messages')) {
+        if (request.method == 'POST' && request.url.path.endsWith('/messages')) {
           return sendResponse.future;
         }
         return http.Response(jsonEncode(pollResponse()), 200);
@@ -508,8 +538,7 @@ void registerViewStateTests(CerqleConfig config) {
       findsNothing,
     );
     expect(find.byTooltip('Send voice message'), findsNothing);
-    expect(runtime.controller.state.messages.single.status,
-        CerqleMessageStatus.pending);
+    expect(runtime.controller.state.messages.single.status, CerqleMessageStatus.pending);
 
     sendResponse.complete(
       http.Response(
@@ -535,10 +564,8 @@ void registerViewStateTests(CerqleConfig config) {
     );
     await tester.pump(const Duration(milliseconds: 100));
 
-    expect(runtime.controller.state.messages.single.status,
-        CerqleMessageStatus.sent);
-    expect(runtime.controller.state.messages.single.localUpload?.filename,
-        'voice.wav');
+    expect(runtime.controller.state.messages.single.status, CerqleMessageStatus.sent);
+    expect(runtime.controller.state.messages.single.localUpload?.filename, 'voice.wav');
 
     await tester.pumpWidget(const SizedBox.shrink());
     await runtime.dispose();
@@ -590,8 +617,7 @@ void registerViewStateTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('required pre-chat collects fields before showing composer',
-      (tester) async {
+  testWidgets('required pre-chat collects fields before showing composer', (tester) async {
     var calls = 0;
     Map<String, dynamic>? submitted;
     String? submittedToken;

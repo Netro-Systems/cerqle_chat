@@ -18,8 +18,7 @@ class _HandoffAction extends StatelessWidget {
       return const SizedBox.shrink();
     }
     final isActionable =
-        status == CerqleHandoffStatus.eligible ||
-        status == CerqleHandoffStatus.failed;
+        status == CerqleHandoffStatus.eligible || status == CerqleHandoffStatus.failed;
     final prompt = switch (status) {
       CerqleHandoffStatus.eligible => 'Prefer a person?',
       CerqleHandoffStatus.requesting => 'Connecting to a human agent…',
@@ -27,9 +26,7 @@ class _HandoffAction extends StatelessWidget {
       CerqleHandoffStatus.failed => 'Could not connect.',
       CerqleHandoffStatus.unavailable => '',
     };
-    final actionLabel = status == CerqleHandoffStatus.failed
-        ? 'Try again'
-        : 'Human Agent';
+    final actionLabel = status == CerqleHandoffStatus.failed ? 'Try again' : 'Human Agent';
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),

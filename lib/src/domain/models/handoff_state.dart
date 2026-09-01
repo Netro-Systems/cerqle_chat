@@ -16,8 +16,8 @@ class CerqleHandoffState {
 
   /// Creates the default state when handoff is not available.
   const CerqleHandoffState.unavailable()
-    : status = CerqleHandoffStatus.unavailable,
-      error = null;
+      : status = CerqleHandoffStatus.unavailable,
+        error = null;
 
   /// Backend-authoritative handoff status.
   final CerqleHandoffStatus status;

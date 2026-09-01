@@ -1,12 +1,12 @@
 part of 'chat_widgets_test.dart';
 
 void registerComposerHandoffTests(CerqleConfig config) {
-  testWidgets('default composer picks images and records voice through adapter',
-      (tester) async {
+  testWidgets('default composer picks images and records voice through adapter', (tester) async {
     final mediaAdapter = _FakeMediaAdapter();
     final mediaConfig = CerqleConfig(
       widgetKey: 'test-widget',
       apiBaseUrl: 'https://chat.example.com',
+      enableOneSignal: false,
       mediaAdapter: mediaAdapter,
       polling: const CerqlePollingConfig(
         visibleInterval: Duration(minutes: 1),
@@ -23,8 +23,7 @@ void registerComposerHandoffTests(CerqleConfig config) {
         if (request.url.path.endsWith('/session')) {
           return http.Response(jsonEncode(sessionResponse()), 200);
         }
-        if (request.method == 'POST' &&
-            request.url.path.endsWith('/messages')) {
+        if (request.method == 'POST' && request.url.path.endsWith('/messages')) {
           uploadedContentTypes.add(request.headers['content-type'] ?? '');
           uploadedBodies.add(request.bodyBytes);
           uploadCount++;
@@ -60,10 +59,13 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await tester.pump();
     await tester.pump();
 
-    expect(find.byTooltip('Attach image'), findsOneWidget);
+    expect(find.byTooltip('Attach file'), findsOneWidget);
     expect(find.byTooltip('Record voice message'), findsOneWidget);
 
-    await tester.tap(find.byTooltip('Attach image'));
+    await tester.tap(find.byTooltip('Attach file'));
+    await tester.pumpAndSettle();
+    expect(find.byType(AttachmentPickerSheet), findsOneWidget);
+    await tester.tap(find.text('Gallery'));
     await tester.pumpAndSettle();
     expect(mediaAdapter.imagePicks, 1);
     final preview = find.byKey(
@@ -111,8 +113,7 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('eligible handoff uses the human-agent prompt and connects',
-      (tester) async {
+  testWidgets('eligible handoff uses the human-agent prompt and connects', (tester) async {
     var handoffCalls = 0;
     final runtime = _runtime(
       config,
@@ -161,8 +162,7 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('terminal server failure is actionable and hides composer',
-      (tester) async {
+  testWidgets('terminal server failure is actionable and hides composer', (tester) async {
     final runtime = _runtime(
       config,
       MockClient((_) async => http.Response('{}', 404)),
@@ -180,8 +180,7 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('custom empty builder receives immutable ready state',
-      (tester) async {
+  testWidgets('custom empty builder receives immutable ready state', (tester) async {
     final runtime = _runtime(
       config,
       MockClient(

@@ -14,19 +14,19 @@ class _WelcomeBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    label: 'Support welcome message. $body',
-    child: _BubbleLayout(
-      visitor: false,
-      widgetConfig: widgetConfig,
-      colors: colors,
-      bubbleKey: const ValueKey<String>('cerqle-welcome-bubble'),
-      child: SelectableText(
-        body,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: colors.onAgentBubble,
-          height: 1.4,
+        label: 'Support welcome message. $body',
+        child: _BubbleLayout(
+          visitor: false,
+          widgetConfig: widgetConfig,
+          colors: colors,
+          bubbleKey: const ValueKey<String>('cerqle-welcome-bubble'),
+          child: SelectableText(
+            body,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: colors.onAgentBubble,
+                  height: 1.4,
+                ),
+          ),
         ),
-      ),
-    ),
-  );
+      );
 }

@@ -9,9 +9,9 @@ final class _SessionCoordinator {
     required this.config,
     required WidgetRemoteDataSource remoteDataSource,
     required CerqleSessionStore sessionStore,
-  }) : _remoteDataSource = remoteDataSource,
-       _sessionStore = sessionStore,
-       _activeUser = config.user {
+  })  : _remoteDataSource = remoteDataSource,
+        _sessionStore = sessionStore,
+        _activeUser = config.user {
     _unsignedEphemeralScope = createEphemeralScopeId();
     _namespace = sessionNamespace(
       config: config,
@@ -210,8 +210,7 @@ void validateCerqleRuntimeConfig(CerqleConfig config) {
 }
 
 /// Returns the identity-scoped key used to prevent duplicate presentations.
-String cerqlePresentationScope(CerqleConfig config) =>
-    presentationScopeKey(config);
+String cerqlePresentationScope(CerqleConfig config) => presentationScopeKey(config);
 
 /// Clears default secure credentials without exposing storage to presentation.
 Future<void> resetCerqleStoredSession(CerqleConfig config) async {

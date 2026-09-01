@@ -6,6 +6,7 @@ class _BubbleLayout extends StatelessWidget {
     required this.widgetConfig,
     required this.colors,
     required this.child,
+    this.isImage = false,
     this.bubbleKey,
   });
 
@@ -13,65 +14,69 @@ class _BubbleLayout extends StatelessWidget {
   final CerqleWidgetConfig? widgetConfig;
   final CerqleResolvedTheme colors;
   final Widget child;
+  final bool isImage;
   final Key? bubbleKey;
 
   @override
   Widget build(BuildContext context) => LayoutBuilder(
-    builder: (context, constraints) {
-      final viewportWidth = constraints.hasBoundedWidth
-          ? constraints.maxWidth
-          : MediaQuery.sizeOf(context).width;
-      final maximumWidth = math.min(viewportWidth * 0.76, 520.0);
-      return Align(
-        alignment: visitor
-            ? AlignmentDirectional.centerEnd
-            : AlignmentDirectional.centerStart,
-        child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: maximumWidth),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: <Widget>[
-              if (!visitor) ...<Widget>[
-                _SupportAvatar(
-                  avatarUrl: widgetConfig?.avatarUrl,
-                  size: 28,
-                  backgroundColor: colors.primary,
-                ),
-                const SizedBox(width: 8),
-              ],
-              Flexible(
-                child: DecoratedBox(
-                  key: bubbleKey,
-                  decoration: BoxDecoration(
-                    color: visitor ? colors.visitorBubble : colors.agentBubble,
-                    border: visitor ? null : Border.all(color: colors.outline),
-                    borderRadius: BorderRadiusDirectional.only(
-                      topStart: Radius.circular(colors.borderRadius),
-                      topEnd: Radius.circular(colors.borderRadius),
-                      bottomStart: Radius.circular(
-                        visitor ? colors.borderRadius : 5,
+        builder: (context, constraints) {
+          final viewportWidth =
+              constraints.hasBoundedWidth ? constraints.maxWidth : MediaQuery.sizeOf(context).width;
+          final widthFactor = isImage ? 0.9 : 0.76;
+          final widthLimit = isImage ? 520.0 : 420.0;
+          final availableMaxWidth = viewportWidth * widthFactor;
+          final maximumWidth = math.min(
+            availableMaxWidth > widthLimit ? widthLimit : availableMaxWidth,
+            520.0,
+          );
+          return Align(
+            alignment: visitor ? AlignmentDirectional.centerEnd : AlignmentDirectional.centerStart,
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: maximumWidth),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: <Widget>[
+                  if (!visitor) ...<Widget>[
+                    _SupportAvatar(
+                      avatarUrl: widgetConfig?.avatarUrl,
+                      size: 28,
+                      backgroundColor: colors.primary,
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                    child: DecoratedBox(
+                      key: bubbleKey,
+                      decoration: BoxDecoration(
+                        color: visitor ? colors.visitorBubble : colors.agentBubble,
+                        border: visitor ? null : Border.all(color: colors.outline),
+                        borderRadius: BorderRadiusDirectional.only(
+                          topStart: Radius.circular(colors.borderRadius),
+                          topEnd: Radius.circular(colors.borderRadius),
+                          bottomStart: Radius.circular(
+                            visitor ? colors.borderRadius : 5,
+                          ),
+                          bottomEnd: Radius.circular(
+                            visitor ? 5 : colors.borderRadius,
+                          ),
+                        ),
                       ),
-                      bottomEnd: Radius.circular(
-                        visitor ? 5 : colors.borderRadius,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 13,
+                          vertical: 9,
+                        ),
+                        child: child,
                       ),
                     ),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 9,
-                    ),
-                    child: child,
-                  ),
-                ),
+                ],
               ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       );
-    },
-  );
 }
 
 class _SupportAvatar extends StatelessWidget {
@@ -108,9 +113,7 @@ class _SupportAvatar extends StatelessWidget {
         decoration: BoxDecoration(
           color: backgroundColor,
           shape: BoxShape.circle,
-          border: borderColor == null
-              ? null
-              : Border.all(color: borderColor!, width: 2),
+          border: borderColor == null ? null : Border.all(color: borderColor!, width: 2),
         ),
         child: avatarUrl == null
             ? fallback

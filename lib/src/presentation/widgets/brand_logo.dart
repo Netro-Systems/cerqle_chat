@@ -11,10 +11,10 @@ class CerqleBrandLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.asset(
-    _cerqleLogoAsset,
-    key: imageKey,
-    package: 'cerqle_chat',
-    fit: fit,
-    excludeFromSemantics: true,
-  );
+        _cerqleLogoAsset,
+        key: imageKey,
+        package: 'cerqle_chat',
+        fit: fit,
+        excludeFromSemantics: true,
+      );
 }

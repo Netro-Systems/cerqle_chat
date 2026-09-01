@@ -17,16 +17,16 @@ final class CerqleDebugUploadLogger {
 
   static void selectionStarted() => _debug('image_upload: selection started');
 
-  static void selectionCancelled() =>
-      _debug('image_upload: selection cancelled');
+  static void selectionCancelled() => _debug('image_upload: selection cancelled');
 
   static void selectionReady({
     required int sizeBytes,
     required String mimeType,
-  }) => _debug(
-    'image_upload: selection ready '
-    '(sizeBytes=$sizeBytes, mimeType=$mimeType)',
-  );
+  }) =>
+      _debug(
+        'image_upload: selection ready '
+        '(sizeBytes=$sizeBytes, mimeType=$mimeType)',
+      );
 
   static void selectionFailed(Object error) =>
       _debug('image_upload: selection failed (${_safeError(error)})');
@@ -34,38 +34,40 @@ final class CerqleDebugUploadLogger {
   static void sendRequested({
     required int sizeBytes,
     required String mimeType,
-  }) => _debug(
-    'image_upload: send requested '
-    '(sizeBytes=$sizeBytes, mimeType=$mimeType)',
-  );
+  }) =>
+      _debug(
+        'image_upload: send requested '
+        '(sizeBytes=$sizeBytes, mimeType=$mimeType)',
+      );
 
   static void multipartBuilt({
     required String operation,
     required int sizeBytes,
     required String mimeType,
-  }) => _debug(
-    '$operation: multipart built '
-    '(field=attachment, sizeBytes=$sizeBytes, mimeType=$mimeType)',
-  );
+  }) =>
+      _debug(
+        '$operation: multipart built '
+        '(field=attachment, sizeBytes=$sizeBytes, mimeType=$mimeType)',
+      );
 
-  static void requestDispatched(String operation) =>
-      _debug('$operation: HTTP request dispatched');
+  static void requestDispatched(String operation) => _debug('$operation: HTTP request dispatched');
 
   static void responseReceived(
     String operation,
     int statusCode,
     String? contentType,
-  ) => _debug(
-    '$operation: HTTP response received '
-    '(status=$statusCode, contentType=${_safeContentType(contentType)})',
-  );
+  ) =>
+      _debug(
+        '$operation: HTTP response received '
+        '(status=$statusCode, contentType=${_safeContentType(contentType)})',
+      );
 
   static void sendConfirmed() => _debug('image_upload: send confirmed');
 
   static void failed(String operation, CerqleException error) => _debug(
-    '$operation: failed '
-    '(code=${error.code.name}, status=${error.httpStatus})',
-  );
+        '$operation: failed '
+        '(code=${error.code.name}, status=${error.httpStatus})',
+      );
 
   static void unexpectedFailure(String operation, Object error) =>
       _debug('$operation: failed (${_safeError(error)})');

@@ -2,8 +2,8 @@ part of '../view/chat_view.dart';
 
 class _DefaultMediaAdapter implements CerqleMediaAdapter {
   _DefaultMediaAdapter({ImagePicker? imagePicker, AudioRecorder? recorder})
-    : _imagePicker = imagePicker ?? ImagePicker(),
-      _recorder = recorder ?? AudioRecorder();
+      : _imagePicker = imagePicker ?? ImagePicker(),
+        _recorder = recorder ?? AudioRecorder();
 
   final ImagePicker _imagePicker;
   final AudioRecorder _recorder;
@@ -16,9 +16,11 @@ class _DefaultMediaAdapter implements CerqleMediaAdapter {
   static const int _recordingChannels = 1;
 
   @override
-  Future<CerqleUpload?> pickImage() async {
+  Future<CerqleUpload?> pickImage({
+    ImageSource source = ImageSource.gallery,
+  }) async {
     final file = await _imagePicker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       maxWidth: 2048,
       maxHeight: 2048,
       imageQuality: 90,
@@ -35,6 +37,85 @@ class _DefaultMediaAdapter implements CerqleMediaAdapter {
       allowedMimeTypes: const <String>{'image/jpeg', 'image/png', 'image/webp'},
     );
     return CerqleUpload(bytes: bytes, filename: filename, mimeType: mimeType);
+  }
+
+  /// Opens camera to capture an image.
+  Future<CerqleUpload?> pickCameraImage() => pickImage(source: ImageSource.camera);
+
+  /// Opens gallery to select an image.
+  Future<CerqleUpload?> pickGalleryImage() => pickImage(source: ImageSource.gallery);
+
+  @override
+  Future<CerqleUpload?> pickDocument() async {
+    const docTypeGroup = XTypeGroup(
+      label: 'documents',
+      extensions: <String>[
+        'pdf',
+        'doc',
+        'docx',
+        'txt',
+        'rtf',
+        'xls',
+        'xlsx',
+        'ppt',
+        'pptx',
+        'csv',
+        'zip',
+        'rar',
+        'json',
+        'xml',
+      ],
+    );
+    XFile? file;
+    try {
+      file = await openFile(
+        acceptedTypeGroups: const <XTypeGroup>[docTypeGroup],
+      );
+    } on Object {
+      try {
+        file = await openFile();
+      } on Object {
+        return null;
+      }
+    }
+    if (file == null) return null;
+
+    final bytes = await file.readAsBytes();
+    final filename = file.name.trim();
+    final mimeType = (file.mimeType ?? _documentMimeType(filename)).toLowerCase();
+    _validateMedia(
+      bytes: bytes,
+      filename: filename,
+      mimeType: mimeType,
+      allowedMimeTypes: const <String>{
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.ms-excel',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-powerpoint',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+        'text/plain',
+        'text/csv',
+        'text/comma-separated-values',
+        'application/csv',
+        'application/zip',
+        'application/x-zip-compressed',
+        'application/x-rar-compressed',
+        'application/rtf',
+        'text/rtf',
+        'application/json',
+        'text/json',
+        'application/xml',
+        'text/xml',
+        'application/octet-stream',
+      },
+    );
+    return CerqleUpload(
+      bytes: bytes,
+      filename: filename,
+      mimeType: mimeType,
+    );
   }
 
   @override
@@ -132,6 +213,31 @@ class _DefaultMediaAdapter implements CerqleMediaAdapter {
     _recordingDone = null;
     _recordingBytes = null;
     _recordingError = null;
+  }
+
+  String _documentMimeType(String filename) {
+    final lower = filename.toLowerCase();
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.doc')) return 'application/msword';
+    if (lower.endsWith('.docx')) {
+      return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+    if (lower.endsWith('.xls')) return 'application/vnd.ms-excel';
+    if (lower.endsWith('.xlsx')) {
+      return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    }
+    if (lower.endsWith('.ppt')) return 'application/vnd.ms-powerpoint';
+    if (lower.endsWith('.pptx')) {
+      return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+    }
+    if (lower.endsWith('.txt')) return 'text/plain';
+    if (lower.endsWith('.csv')) return 'text/csv';
+    if (lower.endsWith('.zip')) return 'application/zip';
+    if (lower.endsWith('.rar')) return 'application/x-rar-compressed';
+    if (lower.endsWith('.rtf')) return 'application/rtf';
+    if (lower.endsWith('.json')) return 'application/json';
+    if (lower.endsWith('.xml')) return 'application/xml';
+    return 'application/octet-stream';
   }
 
   String _imageMimeType(String filename) {

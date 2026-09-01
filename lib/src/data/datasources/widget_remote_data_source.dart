@@ -55,6 +55,11 @@ abstract interface class WidgetRemoteDataSource {
     required String widgetKey,
     required String token,
   });
+
+  Future<void> markRead({
+    required String widgetKey,
+    required String token,
+  });
 }
 
 /// HTTP implementation of the visitor widget remote data source.
@@ -64,7 +69,7 @@ abstract interface class WidgetRemoteDataSource {
 final class HttpWidgetRemoteDataSource implements WidgetRemoteDataSource {
   /// Creates a data source backed by [networkCaller].
   HttpWidgetRemoteDataSource({required NetworkCaller networkCaller})
-    : _networkCaller = networkCaller;
+      : _networkCaller = networkCaller;
 
   final NetworkCaller _networkCaller;
   final WidgetRequestEncoder _encoder = const WidgetRequestEncoder();
@@ -161,9 +166,7 @@ final class HttpWidgetRemoteDataSource implements WidgetRemoteDataSource {
       attachment.url,
       token: token,
       operation: WidgetOperation.media,
-      accept: attachment.mimeType?.startsWith('audio/') == true
-          ? 'audio/*,*/*'
-          : '*/*',
+      accept: attachment.mimeType?.startsWith('audio/') == true ? 'audio/*,*/*' : '*/*',
     );
     return response.bodyBytes;
   }
@@ -196,5 +199,18 @@ final class HttpWidgetRemoteDataSource implements WidgetRemoteDataSource {
       operation: WidgetOperation.handoff,
     );
     return _decoder.handoff(response);
+  }
+
+  @override
+  Future<void> markRead({
+    required String widgetKey,
+    required String token,
+  }) async {
+    await _networkCaller.postJson(
+      ApiEndpoints.read,
+      body: _encoder.jsonBody({'key': widgetKey}),
+      token: token,
+      operation: WidgetOperation.markRead,
+    );
   }
 }

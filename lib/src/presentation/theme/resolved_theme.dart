@@ -45,9 +45,7 @@ class CerqleResolvedTheme {
     required CerqleWidgetConfig? server,
     required bool useApiColors,
   }) {
-    final serverPrimary = useApiColors
-        ? _parseHex(server?.primaryColorHex)
-        : null;
+    final serverPrimary = useApiColors ? _parseHex(server?.primaryColorHex) : null;
     final requestedBrightness = override?.brightness;
     final colorScheme = requestedBrightness == null
         ? hostTheme.colorScheme
@@ -57,18 +55,13 @@ class CerqleResolvedTheme {
           );
     final primary = override?.primaryColor ?? serverPrimary ?? _brandPrimary;
     final isDark = colorScheme.brightness == Brightness.dark;
-    final surface =
-        override?.surfaceColor ??
-        (isDark ? _brandSurfaceDark : _brandSurfaceLight);
+    final surface = override?.surfaceColor ?? (isDark ? _brandSurfaceDark : _brandSurfaceLight);
     final background =
-        override?.backgroundColor ??
-        (isDark ? _brandBackgroundDark : _brandBackgroundLight);
+        override?.backgroundColor ?? (isDark ? _brandBackgroundDark : _brandBackgroundLight);
     final visitorBubble =
-        override?.visitorBubbleColor ??
-        (isDark ? _brandSecondaryStrong : _brandSecondary);
+        override?.visitorBubbleColor ?? (isDark ? _brandSecondaryStrong : _brandSecondary);
     final agentBubble =
-        override?.agentBubbleColor ??
-        (isDark ? _brandSurfaceMutedDark : _brandSurfaceMutedLight);
+        override?.agentBubbleColor ?? (isDark ? _brandSurfaceMutedDark : _brandSurfaceMutedLight);
     final onSurface = isDark ? _brandOnSurfaceDark : _brandOnSurfaceLight;
     return CerqleResolvedTheme(
       primary: primary,
@@ -77,15 +70,12 @@ class CerqleResolvedTheme {
       surface: surface,
       surfaceMuted: isDark ? _brandSurfaceMutedDark : _brandSurfaceMutedLight,
       visitorBubble: visitorBubble,
-      onVisitorBubble:
-          override?.onVisitorBubbleColor ?? _contrasting(visitorBubble),
+      onVisitorBubble: override?.onVisitorBubbleColor ?? _contrasting(visitorBubble),
       agentBubble: agentBubble,
       onAgentBubble: override?.onAgentBubbleColor ?? onSurface,
       error: override?.errorColor ?? colorScheme.error,
       onSurface: onSurface,
-      onSurfaceMuted: isDark
-          ? _brandOnSurfaceMutedDark
-          : _brandOnSurfaceMutedLight,
+      onSurfaceMuted: isDark ? _brandOnSurfaceMutedDark : _brandOnSurfaceMutedLight,
       outline: isDark ? _brandOutlineDark : _brandOutlineLight,
       borderRadius: override?.borderRadius?.clamp(4, 32).toDouble() ?? 16,
       messageSpacing: override?.messageSpacing?.clamp(2, 24).toDouble() ?? 8,
@@ -113,8 +103,8 @@ class CerqleResolvedTheme {
 
 Color _contrasting(Color background) =>
     ThemeData.estimateBrightnessForColor(background) == Brightness.dark
-    ? Colors.white
-    : Colors.black;
+        ? Colors.white
+        : Colors.black;
 
 Color? _parseHex(String? value) {
   if (value == null || !RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(value)) {

@@ -36,16 +36,16 @@ class CerqleChatState {
 
   /// Creates the initial disconnected state.
   factory CerqleChatState.initial() => CerqleChatState(
-    phase: CerqleChatPhase.idle,
-    messages: const <CerqleMessage>[],
-    connection: CerqleConnectionState.disconnected,
-    widget: null,
-    handoff: const CerqleHandoffState.unavailable(),
-    supportAvailability: CerqleSupportAvailability.unknown,
-    visitorTyping: false,
-    agentTyping: null,
-    pendingCount: 0,
-  );
+        phase: CerqleChatPhase.idle,
+        messages: const <CerqleMessage>[],
+        connection: CerqleConnectionState.disconnected,
+        widget: null,
+        handoff: const CerqleHandoffState.unavailable(),
+        supportAvailability: CerqleSupportAvailability.unknown,
+        visitorTyping: false,
+        agentTyping: null,
+        pendingCount: 0,
+      );
 
   /// Session lifecycle phase.
   final CerqleChatPhase phase;
@@ -89,24 +89,21 @@ class CerqleChatState {
     Object? agentTyping = _notProvided,
     int? pendingCount,
     Object? error = _notProvided,
-  }) => CerqleChatState(
-    phase: phase ?? this.phase,
-    messages: messages ?? this.messages,
-    connection: connection ?? this.connection,
-    widget: identical(widget, _notProvided)
-        ? this.widget
-        : widget as CerqleWidgetConfig?,
-    handoff: handoff ?? this.handoff,
-    supportAvailability: supportAvailability ?? this.supportAvailability,
-    visitorTyping: visitorTyping ?? this.visitorTyping,
-    agentTyping: identical(agentTyping, _notProvided)
-        ? this.agentTyping
-        : agentTyping as CerqleAgentTyping?,
-    pendingCount: pendingCount ?? this.pendingCount,
-    error: identical(error, _notProvided)
-        ? this.error
-        : error as CerqleException?,
-  );
+  }) =>
+      CerqleChatState(
+        phase: phase ?? this.phase,
+        messages: messages ?? this.messages,
+        connection: connection ?? this.connection,
+        widget: identical(widget, _notProvided) ? this.widget : widget as CerqleWidgetConfig?,
+        handoff: handoff ?? this.handoff,
+        supportAvailability: supportAvailability ?? this.supportAvailability,
+        visitorTyping: visitorTyping ?? this.visitorTyping,
+        agentTyping: identical(agentTyping, _notProvided)
+            ? this.agentTyping
+            : agentTyping as CerqleAgentTyping?,
+        pendingCount: pendingCount ?? this.pendingCount,
+        error: identical(error, _notProvided) ? this.error : error as CerqleException?,
+      );
 }
 
 const Object _notProvided = Object();

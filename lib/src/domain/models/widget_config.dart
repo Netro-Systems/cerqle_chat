@@ -62,8 +62,8 @@ class CerqleWidgetConfig {
     this.launcherText,
     this.launcherLogoUrl,
     this.offlineMessage,
-  }) : teamMembers = List<CerqleTeamMember>.unmodifiable(teamMembers),
-       preChatFields = List<CerqlePreChatField>.unmodifiable(preChatFields);
+  })  : teamMembers = List<CerqleTeamMember>.unmodifiable(teamMembers),
+        preChatFields = List<CerqlePreChatField>.unmodifiable(preChatFields);
 
   /// Header title.
   final String title;

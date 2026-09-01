@@ -16,8 +16,7 @@ abstract final class CerqleChat {
       <String, Future<CerqleChatResult?>>{};
   static final Map<String, CerqleChatController> _ownedControllers =
       <String, CerqleChatController>{};
-  static StreamSubscription<Map<String, dynamic>>?
-      _notificationClickSubscription;
+  static StreamSubscription<Map<String, dynamic>>? _notificationClickSubscription;
   static void Function(Map<String, dynamic> payload)? _onNotificationTapped;
   static CerqleConfig? _lastConfig;
   static GlobalKey<NavigatorState>? _navigatorKey;
@@ -42,17 +41,15 @@ abstract final class CerqleChat {
       _onNotificationTapped = onNotificationTapped;
     }
 
-    final appId =
-        config?.oneSignalAppId ?? CerqleConfig.defaultOneSignalAppId;
+    final appId = config?.oneSignalAppId ?? CerqleConfig.defaultOneSignalAppId;
     WidgetOneSignalService.instance.initialize(appId: appId);
     if (config?.enableOneSignal != false) {
       WidgetOneSignalService.instance.requestPermission();
     }
 
     _notificationClickSubscription?.cancel();
-    _notificationClickSubscription = WidgetOneSignalService
-        .instance.notificationClicks
-        .listen(_handleNotificationClick);
+    _notificationClickSubscription =
+        WidgetOneSignalService.instance.notificationClicks.listen(_handleNotificationClick);
   }
 
   /// Registers visitor presence in the background on the Cerqle Hub server.
@@ -141,12 +138,10 @@ abstract final class CerqleChat {
     final active = _activePresentations[scope];
     if (active != null) return active;
 
-    if (controller != null &&
-        cerqlePresentationScope(controller.config) != scope) {
+    if (controller != null && cerqlePresentationScope(controller.config) != scope) {
       throw const CerqleException(
         code: CerqleErrorCode.configuration,
-        message:
-            'The supplied controller does not match the chat configuration.',
+        message: 'The supplied controller does not match the chat configuration.',
         retryable: false,
       );
     }
@@ -155,12 +150,12 @@ abstract final class CerqleChat {
     _activePresentations[scope] = completer.future;
     unawaited(
       _openPresentation(
-            context,
-            scope: scope,
-            config: config,
-            suppliedController: controller,
-            presentation: presentation ?? config.presentation,
-          )
+        context,
+        scope: scope,
+        config: config,
+        suppliedController: controller,
+        presentation: presentation ?? config.presentation,
+      )
           .then(completer.complete, onError: completer.completeError)
           .whenComplete(() => _activePresentations.remove(scope)),
     );
@@ -175,8 +170,7 @@ abstract final class CerqleChat {
     required CerqlePresentation presentation,
   }) async {
     CerqleClient? ownedClient;
-    final controller =
-        suppliedController ??
+    final controller = suppliedController ??
         (() {
           final client = CerqleClient(config: config);
           ownedClient = client;
@@ -189,8 +183,7 @@ abstract final class CerqleChat {
         case CerqlePresentation.fullScreen:
           await Navigator.of(context).push<CerqleChatResult>(
             MaterialPageRoute<CerqleChatResult>(
-              builder: (_) =>
-                  CerqleChatScreen(config: config, controller: controller),
+              builder: (_) => CerqleChatScreen(config: config, controller: controller),
             ),
           );
           break;

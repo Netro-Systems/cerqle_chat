@@ -8,7 +8,7 @@ import '../../domain/contracts/session_store.dart';
 class FlutterSecureCerqleSessionStore implements CerqleSessionStore {
   /// Creates a secure store, optionally using an injected storage adapter.
   FlutterSecureCerqleSessionStore({FlutterSecureStorage? storage})
-    : _storage = storage ?? const FlutterSecureStorage();
+      : _storage = storage ?? const FlutterSecureStorage();
 
   final FlutterSecureStorage _storage;
   static const int _maxStoredSessions = 15;

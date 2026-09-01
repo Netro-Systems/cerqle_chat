@@ -10,15 +10,15 @@ class ChatConnectionBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    liveRegion: true,
-    child: Container(
-      width: double.infinity,
-      color: colors.surfaceMuted,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: const Text(
-        'Reconnecting. New messages may not be confirmed yet.',
-        textAlign: TextAlign.center,
-      ),
-    ),
-  );
+        liveRegion: true,
+        child: Container(
+          width: double.infinity,
+          color: colors.surfaceMuted,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: const Text(
+            'Reconnecting. New messages may not be confirmed yet.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
 }

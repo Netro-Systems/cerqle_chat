@@ -27,13 +27,11 @@ class CerqleChatController with WidgetsBindingObserver {
   late final StreamController<CerqleChatState> _statesController;
   late final StreamController<CerqleChatEvent> _eventsController;
   final ChatStateMachine _stateMachine = ChatStateMachine();
-  final WidgetOneSignalService _oneSignalService =
-      WidgetOneSignalService.instance;
+  final WidgetOneSignalService _oneSignalService = WidgetOneSignalService.instance;
   Future<void>? _initializing;
   Future<void>? _pollInFlight;
   Future<void> _sendQueue = Future<void>.value();
-  final Map<int, CerqleMessage> _deferredVisitorPollMessages =
-      <int, CerqleMessage>{};
+  final Map<int, CerqleMessage> _deferredVisitorPollMessages = <int, CerqleMessage>{};
   Timer? _typingIdleTimer;
   DateTime? _lastTypingSentAt;
   DateTime _lastActivity = DateTime.now();
@@ -110,8 +108,7 @@ class CerqleChatController with WidgetsBindingObserver {
       final result = await _client._startSession(deviceId: deviceId);
       _validatePreChatFields(result.widget);
       final preChatSatisfied =
-          result.session.preChatCompleted ||
-          _activeUserSatisfiesPreChat(result.widget);
+          result.session.preChatCompleted || _activeUserSatisfiesPreChat(result.widget);
       if (result.widget.requiresPreChat && !preChatSatisfied) {
         _emit(
           _state.copyWith(
@@ -211,8 +208,7 @@ class CerqleChatController with WidgetsBindingObserver {
   /// persisted by the package.
   Future<void> submitPreChat(CerqlePreChatData data) async {
     _ensureNotDisposed();
-    if (_state.phase != CerqleChatPhase.awaitingPreChat ||
-        _state.widget == null) {
+    if (_state.phase != CerqleChatPhase.awaitingPreChat || _state.widget == null) {
       throw const CerqleException(
         code: CerqleErrorCode.validation,
         message: 'Pre-chat information is not currently required.',
@@ -270,8 +266,7 @@ class CerqleChatController with WidgetsBindingObserver {
     _ensureNotDisposed();
     final active = _pollInFlight;
     if (active != null) return active;
-    if (_state.phase != CerqleChatPhase.ready &&
-        _state.phase != CerqleChatPhase.reconnecting) {
+    if (_state.phase != CerqleChatPhase.ready && _state.phase != CerqleChatPhase.reconnecting) {
       return initialize();
     }
     final future = _refreshInternal(_sessionRevision);
@@ -340,9 +335,7 @@ class CerqleChatController with WidgetsBindingObserver {
       _pollRetryAfter = exception.retryAfter;
       _emit(
         _state.copyWith(
-          phase: !exception.retryable
-              ? CerqleChatPhase.failure
-              : CerqleChatPhase.reconnecting,
+          phase: !exception.retryable ? CerqleChatPhase.failure : CerqleChatPhase.reconnecting,
           connection: !exception.retryable
               ? CerqleConnectionState.disconnected
               : CerqleConnectionState.reconnecting,
@@ -396,8 +389,7 @@ class CerqleChatController with WidgetsBindingObserver {
   ///
   /// Throws [CerqleException] when the controller is not ready or the
   /// attachment is rejected or cannot be delivered.
-  Future<CerqleMessage> sendImage(CerqleUpload upload, {String? caption}) =>
-      _enqueueSend(
+  Future<CerqleMessage> sendImage(CerqleUpload upload, {String? caption}) => _enqueueSend(
         () => _sendUploadInternal(
           upload,
           CerqleMessageType.image,
@@ -409,11 +401,26 @@ class CerqleChatController with WidgetsBindingObserver {
   ///
   /// Throws [CerqleException] when the controller is not ready or the
   /// attachment is rejected or cannot be delivered.
-  Future<CerqleMessage> sendAudio(CerqleUpload upload, {String? caption}) =>
-      _enqueueSend(
+  Future<CerqleMessage> sendAudio(CerqleUpload upload, {String? caption}) => _enqueueSend(
         () => _sendUploadInternal(
           upload,
           CerqleMessageType.audio,
+          caption?.trim(),
+        ),
+      );
+
+  /// Uploads a document or file with an optional text [caption].
+  ///
+  /// Throws [CerqleException] when the controller is not ready or the
+  /// attachment is rejected or cannot be delivered.
+  Future<CerqleMessage> sendFile(
+    CerqleUpload upload, {
+    String? caption,
+  }) =>
+      _enqueueSend(
+        () => _sendUploadInternal(
+          upload,
+          CerqleMessageType.file,
           caption?.trim(),
         ),
       );
@@ -437,8 +444,12 @@ class CerqleChatController with WidgetsBindingObserver {
       body: caption?.isNotEmpty == true
           ? caption!
           : type == CerqleMessageType.image
-          ? 'Image attachment'
-          : 'Voice message',
+              ? 'Image attachment'
+              : type == CerqleMessageType.audio
+                  ? 'Voice message'
+                  : upload.filename.isNotEmpty
+                      ? upload.filename
+                      : 'Document attachment',
       status: CerqleMessageStatus.pending,
       createdAt: DateTime.now(),
       localUpload: upload,
@@ -480,12 +491,9 @@ class CerqleChatController with WidgetsBindingObserver {
       // Without an idempotency key, retrying or declaring failure can duplicate
       // a visitor message or misrepresent its delivery state.
       final ambiguous =
-          exception.code == CerqleErrorCode.network ||
-          exception.code == CerqleErrorCode.server;
+          exception.code == CerqleErrorCode.network || exception.code == CerqleErrorCode.server;
       final failed = pending.copyWith(
-        status: ambiguous
-            ? CerqleMessageStatus.unconfirmed
-            : CerqleMessageStatus.failed,
+        status: ambiguous ? CerqleMessageStatus.unconfirmed : CerqleMessageStatus.failed,
         error: exception,
       );
       _replaceLocal(pending.localId, failed);
@@ -558,9 +566,7 @@ class CerqleChatController with WidgetsBindingObserver {
         retryable: false,
       );
     }
-    final messages = _state.messages
-        .where((item) => item.localId != localId)
-        .toList();
+    final messages = _state.messages.where((item) => item.localId != localId).toList();
     _emit(
       _state.copyWith(
         messages: messages,
@@ -695,12 +701,20 @@ class CerqleChatController with WidgetsBindingObserver {
     if (_hasLease) await initialize();
   }
 
+  /// Manually marks unread agent messages as seen/read.
+  Future<void> markRead() async {
+    _ensureNotDisposed();
+    if (_state.phase != CerqleChatPhase.ready) return;
+    try {
+      await _client._markRead();
+    } catch (_) {}
+  }
+
   Future<void> _stopTypingBestEffort() async {
     _typingIdleTimer?.cancel();
     _typingIdleTimer = null;
     _lastTypingSentAt = null;
-    if (_state.phase != CerqleChatPhase.ready &&
-        _state.phase != CerqleChatPhase.reconnecting) {
+    if (_state.phase != CerqleChatPhase.ready && _state.phase != CerqleChatPhase.reconnecting) {
       return;
     }
     if (_state.visitorTyping) {
@@ -715,12 +729,20 @@ class CerqleChatController with WidgetsBindingObserver {
   }
 
   @internal
+
   /// Records that a prebuilt chat presentation opened.
   void handlePresentationOpened() {
     _addEvent(const CerqleChatOpened());
+    if (_state.phase == CerqleChatPhase.ready &&
+        _state.messages.any(
+          (m) => m.role == CerqleMessageRole.agent && m.status != CerqleMessageStatus.read,
+        )) {
+      unawaited(_client._markRead().catchError((_) {}));
+    }
   }
 
   @internal
+
   /// Records that a prebuilt presentation closed for [reason].
   void handlePresentationClosed(CerqleChatCloseReason reason) {
     _addEvent(CerqleChatClosed(reason: reason));
@@ -849,6 +871,9 @@ class CerqleChatController with WidgetsBindingObserver {
   void _handleRealtimeMessageCreated(Object? payload) {
     final message = const WidgetResponseDecoder().realtimeMessage(payload);
     if (message == null) return;
+    if (message.role == CerqleMessageRole.agent) {
+      unawaited(_client._markRead().catchError((_) {}));
+    }
     final messages = _mergePollMessages(
       _state.messages,
       <CerqleMessage>[message],
@@ -900,13 +925,14 @@ class CerqleChatController with WidgetsBindingObserver {
     List<CerqleMessage> existing,
     List<CerqleMessage> incoming, {
     required bool emitReceivedEvents,
-  }) => _messageReconciler.merge(
-    existing,
-    incoming,
-    onNewAgentMessage: emitReceivedEvents
-        ? (message) => _addEvent(CerqleMessageReceived(message: message))
-        : null,
-  );
+  }) =>
+      _messageReconciler.merge(
+        existing,
+        incoming,
+        onNewAgentMessage: emitReceivedEvents
+            ? (message) => _addEvent(CerqleMessageReceived(message: message))
+            : null,
+      );
 
   List<CerqleMessage> _mergePollMessages(
     List<CerqleMessage> existing,
@@ -921,10 +947,7 @@ class CerqleChatController with WidgetsBindingObserver {
       );
     }
 
-    final knownServerIds = existing
-        .map((message) => message.serverId)
-        .whereType<int>()
-        .toSet();
+    final knownServerIds = existing.map((message) => message.serverId).whereType<int>().toSet();
     final immediate = <CerqleMessage>[];
     for (final message in incoming) {
       final serverId = message.serverId;
@@ -966,10 +989,10 @@ class CerqleChatController with WidgetsBindingObserver {
   int _greatestServerId(
     List<CerqleMessage> messages, {
     required int fallback,
-  }) => _messageReconciler.greatestServerId(messages, fallback: fallback);
+  }) =>
+      _messageReconciler.greatestServerId(messages, fallback: fallback);
 
-  int _compareMessages(CerqleMessage a, CerqleMessage b) =>
-      _messageReconciler.compare(a, b);
+  int _compareMessages(CerqleMessage a, CerqleMessage b) => _messageReconciler.compare(a, b);
 
   void _upsertLocal(CerqleMessage message) {
     final messages = <CerqleMessage>[..._state.messages];
@@ -1002,8 +1025,7 @@ class CerqleChatController with WidgetsBindingObserver {
         }
         continue;
       }
-      if (replacementServerId != null &&
-          message.serverId == replacementServerId) {
+      if (replacementServerId != null && message.serverId == replacementServerId) {
         continue;
       }
       messages.add(message);
@@ -1029,13 +1051,11 @@ class CerqleChatController with WidgetsBindingObserver {
     );
   }
 
-  int _pendingCount(List<CerqleMessage> messages) => messages
-      .where((message) => message.status == CerqleMessageStatus.pending)
-      .length;
+  int _pendingCount(List<CerqleMessage> messages) =>
+      messages.where((message) => message.status == CerqleMessageStatus.pending).length;
 
   void _updateHandoff(CerqleHandoffState handoff) {
-    if (_state.handoff.status == handoff.status &&
-        _state.handoff.error == handoff.error) {
+    if (_state.handoff.status == handoff.status && _state.handoff.error == handoff.error) {
       return;
     }
     _emit(_state.copyWith(handoff: handoff));
@@ -1083,8 +1103,7 @@ class CerqleChatController with WidgetsBindingObserver {
 
   void _ensureReady() {
     _ensureNotDisposed();
-    if (_state.phase != CerqleChatPhase.ready &&
-        _state.phase != CerqleChatPhase.reconnecting) {
+    if (_state.phase != CerqleChatPhase.ready && _state.phase != CerqleChatPhase.reconnecting) {
       throw const CerqleException(
         code: CerqleErrorCode.unauthorized,
         message: 'Chat is not ready to send a message.',

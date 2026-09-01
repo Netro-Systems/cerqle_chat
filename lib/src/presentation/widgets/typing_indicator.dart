@@ -8,24 +8,24 @@ class _TypingIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Semantics(
-    liveRegion: true,
-    label: 'Support is typing',
-    child: Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        decoration: BoxDecoration(
-          color: colors.agentBubble,
-          borderRadius: BorderRadius.circular(colors.borderRadius),
+        liveRegion: true,
+        label: 'Support is typing',
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: colors.agentBubble,
+              borderRadius: BorderRadius.circular(colors.borderRadius),
+            ),
+            child: Text(
+              typing.name?.trim().isNotEmpty == true
+                  ? '${typing.name} is typing…'
+                  : 'Support is typing…',
+              style: TextStyle(color: colors.onAgentBubble),
+            ),
+          ),
         ),
-        child: Text(
-          typing.name?.trim().isNotEmpty == true
-              ? '${typing.name} is typing…'
-              : 'Support is typing…',
-          style: TextStyle(color: colors.onAgentBubble),
-        ),
-      ),
-    ),
-  );
+      );
 }

@@ -7,7 +7,17 @@ enum CerqleMessageRole { visitor, agent, unknown }
 enum CerqleMessageType { text, image, audio, file, unknown }
 
 /// Delivery state of a message in controller state.
-enum CerqleMessageStatus { pending, sent, failed, unconfirmed }
+enum CerqleMessageStatus {
+  pending,
+  sent,
+  delivered,
+  read,
+  failed,
+  unconfirmed;
+
+  /// Alias for read status.
+  static const CerqleMessageStatus seen = CerqleMessageStatus.read;
+}
 
 /// Backend-reported sender category.
 enum CerqleSenderKind { visitor, bot, human, automation, broadcast, unknown }
@@ -66,6 +76,15 @@ class CerqleMessage {
   /// Safe delivery failure, when applicable.
   final CerqleException? error;
 
+  /// Whether the message has been read or seen.
+  bool get isSeen => status == CerqleMessageStatus.read;
+
+  /// Alias for [isSeen].
+  bool get isRead => isSeen;
+
+  /// Whether the message has been delivered to the recipient.
+  bool get isDelivered => status == CerqleMessageStatus.delivered || isSeen;
+
   /// Returns an updated immutable message.
   CerqleMessage copyWith({
     String? localId,
@@ -81,18 +100,19 @@ class CerqleMessage {
     CerqleSenderKind? sentBy,
     CerqleException? error,
     bool clearError = false,
-  }) => CerqleMessage(
-    localId: localId ?? this.localId,
-    serverId: serverId ?? this.serverId,
-    role: role ?? this.role,
-    type: type ?? this.type,
-    body: body ?? this.body,
-    status: status ?? this.status,
-    createdAt: createdAt ?? this.createdAt,
-    attachment: attachment ?? this.attachment,
-    localUpload: localUpload ?? this.localUpload,
-    senderName: senderName ?? this.senderName,
-    sentBy: sentBy ?? this.sentBy,
-    error: clearError ? null : error ?? this.error,
-  );
+  }) =>
+      CerqleMessage(
+        localId: localId ?? this.localId,
+        serverId: serverId ?? this.serverId,
+        role: role ?? this.role,
+        type: type ?? this.type,
+        body: body ?? this.body,
+        status: status ?? this.status,
+        createdAt: createdAt ?? this.createdAt,
+        attachment: attachment ?? this.attachment,
+        localUpload: localUpload ?? this.localUpload,
+        senderName: senderName ?? this.senderName,
+        sentBy: sentBy ?? this.sentBy,
+        error: clearError ? null : error ?? this.error,
+      );
 }

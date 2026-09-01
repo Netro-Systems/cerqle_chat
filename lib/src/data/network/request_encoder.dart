@@ -19,46 +19,49 @@ final class WidgetRequestEncoder {
     required CerqleUser? user,
     required CerqleStoredSession? storedSession,
     String? deviceId,
-  }) => <String, Object>{
-    'key': widgetKey,
-    if (storedSession != null) 'visitor_id': storedSession.visitorId,
-    if (user?.name != null) 'name': user!.name!,
-    if (user?.email != null) 'email': user!.email!,
-    if (user?.avatarUrl != null) 'avatar': user!.avatarUrl!.toString(),
-    if (user?.externalId != null) 'external_id': user!.externalId!,
-    if (user?.signature != null) 'user_hash': user!.signature!,
-    if (user?.resolvedCustomFields case final fields? when fields.isNotEmpty)
-      'custom_fields': fields,
-    if (deviceId != null && deviceId.trim().isNotEmpty) ...<String, Object>{
-      'device_id': deviceId.trim(),
-      'onesignal_id': deviceId.trim(),
-      'push': <String, Object>{
-        'token': deviceId.trim(),
-      },
-    },
-  };
+  }) =>
+      <String, Object>{
+        'key': widgetKey,
+        if (storedSession != null) 'visitor_id': storedSession.visitorId,
+        if (user?.name != null) 'name': user!.name!,
+        if (user?.email != null) 'email': user!.email!,
+        if (user?.avatarUrl != null) 'avatar': user!.avatarUrl!.toString(),
+        if (user?.externalId != null) 'external_id': user!.externalId!,
+        if (user?.signature != null) 'user_hash': user!.signature!,
+        if (user?.resolvedCustomFields case final fields? when fields.isNotEmpty)
+          'custom_fields': fields,
+        if (deviceId != null && deviceId.trim().isNotEmpty) ...<String, Object>{
+          'device_id': deviceId.trim(),
+          'onesignal_id': deviceId.trim(),
+          'push': <String, Object>{
+            'token': deviceId.trim(),
+          },
+        },
+      };
 
   /// Encodes a text-send body.
   Map<String, Object> textBody({
     required String widgetKey,
     required String text,
-  }) => <String, Object>{'key': widgetKey, 'message': text};
+  }) =>
+      <String, Object>{'key': widgetKey, 'message': text};
 
   /// Encodes a visitor-typing body.
   Map<String, Object> typingBody({
     required String widgetKey,
     required bool isTyping,
-  }) => <String, Object>{'key': widgetKey, 'is_typing': isTyping};
+  }) =>
+      <String, Object>{'key': widgetKey, 'is_typing': isTyping};
 
   /// Encodes a human-handoff body.
   Map<String, Object> handoffBody(String widgetKey) => <String, Object>{
-    'key': widgetKey,
-  };
+        'key': widgetKey,
+      };
 
   /// Encodes a JSON request body without exposing maps outside data.
   String jsonBody(Map<String, Object> body) => jsonEncode(body);
 
-  /// Builds the documented multipart image/audio form fields.
+  /// Builds the documented multipart image/audio/document form fields.
   Map<String, String> uploadFields({
     required String widgetKey,
     required CerqleUpload upload,
@@ -76,7 +79,12 @@ final class WidgetRequestEncoder {
     }
     final fields = <String, String>{
       'key': widgetKey,
-      'type': type == CerqleMessageType.image ? 'image' : 'audio',
+      'type': switch (type) {
+        CerqleMessageType.image => 'image',
+        CerqleMessageType.audio => 'audio',
+        CerqleMessageType.file => 'document',
+        _ => 'document',
+      },
       // Match the browser widget's FormData shape. The backend accepts an
       // empty caption, and always including the field avoids a multipart
       // request-shape difference between web and native clients.
@@ -94,7 +102,9 @@ final class WidgetRequestEncoder {
       );
     }
     if (upload.filename.trim().isEmpty ||
-        (type != CerqleMessageType.image && type != CerqleMessageType.audio)) {
+        (type != CerqleMessageType.image &&
+            type != CerqleMessageType.audio &&
+            type != CerqleMessageType.file)) {
       throw const CerqleException(
         code: CerqleErrorCode.attachmentRejected,
         message: 'The attachment filename or message type is invalid.',
@@ -106,28 +116,85 @@ final class WidgetRequestEncoder {
     final mimeType = upload.mimeType.trim().toLowerCase();
     final supported = switch (type) {
       CerqleMessageType.image => const <String, Set<String>>{
-        '.jpg': <String>{'image/jpeg'},
-        '.jpeg': <String>{'image/jpeg'},
-        '.png': <String>{'image/png'},
-        '.webp': <String>{'image/webp'},
-      },
+          '.jpg': <String>{'image/jpeg'},
+          '.jpeg': <String>{'image/jpeg'},
+          '.png': <String>{'image/png'},
+          '.webp': <String>{'image/webp'},
+        },
       CerqleMessageType.audio => const <String, Set<String>>{
-        '.mp3': <String>{'audio/mpeg'},
-        '.aac': <String>{'audio/aac'},
-        '.m4a': <String>{'audio/mp4'},
-        '.amr': <String>{'audio/amr'},
-        '.ogg': <String>{'audio/ogg'},
-        '.oga': <String>{'audio/ogg'},
-        '.wav': <String>{'audio/wav'},
-        '.webm': <String>{'audio/webm'},
-      },
+          '.mp3': <String>{'audio/mpeg'},
+          '.aac': <String>{'audio/aac'},
+          '.m4a': <String>{'audio/mp4'},
+          '.amr': <String>{'audio/amr'},
+          '.ogg': <String>{'audio/ogg'},
+          '.oga': <String>{'audio/ogg'},
+          '.wav': <String>{'audio/wav'},
+          '.webm': <String>{'audio/webm'},
+        },
+      CerqleMessageType.file => const <String, Set<String>>{
+          '.pdf': <String>{'application/pdf', 'application/octet-stream'},
+          '.doc': <String>{'application/msword', 'application/octet-stream'},
+          '.docx': <String>{
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/octet-stream',
+          },
+          '.xls': <String>{
+            'application/vnd.ms-excel',
+            'application/octet-stream',
+          },
+          '.xlsx': <String>{
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/octet-stream',
+          },
+          '.ppt': <String>{
+            'application/vnd.ms-powerpoint',
+            'application/octet-stream',
+          },
+          '.pptx': <String>{
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+            'application/octet-stream',
+          },
+          '.txt': <String>{'text/plain', 'application/octet-stream'},
+          '.csv': <String>{
+            'text/csv',
+            'text/comma-separated-values',
+            'application/csv',
+            'text/plain',
+            'application/octet-stream',
+          },
+          '.zip': <String>{
+            'application/zip',
+            'application/x-zip-compressed',
+            'application/octet-stream',
+          },
+          '.rar': <String>{
+            'application/x-rar-compressed',
+            'application/octet-stream',
+          },
+          '.rtf': <String>{
+            'application/rtf',
+            'text/rtf',
+            'application/octet-stream',
+          },
+          '.json': <String>{
+            'application/json',
+            'text/json',
+            'text/plain',
+            'application/octet-stream',
+          },
+          '.xml': <String>{
+            'application/xml',
+            'text/xml',
+            'text/plain',
+            'application/octet-stream',
+          },
+        },
       _ => const <String, Set<String>>{},
     };
     final matchingEntry = supported.entries.where(
       (entry) => filename.endsWith(entry.key),
     );
-    if (matchingEntry.isEmpty ||
-        !matchingEntry.first.value.contains(mimeType)) {
+    if (matchingEntry.isEmpty || !matchingEntry.first.value.contains(mimeType)) {
       throw const CerqleException(
         code: CerqleErrorCode.attachmentRejected,
         message: 'The attachment filename and MIME type are not supported.',

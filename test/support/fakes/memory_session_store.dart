@@ -2,8 +2,7 @@ import 'package:cerqle_chat/cerqle_chat.dart';
 
 /// In-memory credential store that records persistence interactions.
 final class MemorySessionStore implements CerqleSessionStore {
-  final Map<String, CerqleStoredSession> values =
-      <String, CerqleStoredSession>{};
+  final Map<String, CerqleStoredSession> values = <String, CerqleStoredSession>{};
   final List<String> reads = <String>[];
   final List<String> writes = <String>[];
   final List<String> deletes = <String>[];

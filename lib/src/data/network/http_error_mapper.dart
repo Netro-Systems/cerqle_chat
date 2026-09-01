@@ -13,6 +13,7 @@ enum WidgetOperation {
   media,
   typing,
   handoff,
+  markRead,
 }
 
 /// Converts HTTP failures into safe, operation-aware public exceptions.
@@ -27,81 +28,76 @@ CerqleException mapWidgetHttpError(
   final retryAfterSeconds = int.tryParse(response.headers['retry-after'] ?? '');
   return switch (status) {
     400 => CerqleException(
-      code: CerqleErrorCode.configuration,
-      message: 'The Cerqle request configuration is invalid.',
-      retryable: false,
-      httpStatus: status,
-      fieldErrors: fieldErrors,
-    ),
+        code: CerqleErrorCode.configuration,
+        message: 'The Cerqle request configuration is invalid.',
+        retryable: false,
+        httpStatus: status,
+        fieldErrors: fieldErrors,
+      ),
     401 => CerqleException(
-      code: CerqleErrorCode.sessionExpired,
-      message: 'The chat session expired.',
-      retryable: !sessionRequest,
-      httpStatus: status,
-    ),
+        code: CerqleErrorCode.sessionExpired,
+        message: 'The chat session expired.',
+        retryable: !sessionRequest,
+        httpStatus: status,
+      ),
     403 => CerqleException(
-      code: CerqleErrorCode.forbidden,
-      message: 'This widget is not allowed for the current application.',
-      retryable: false,
-      httpStatus: status,
-    ),
+        code: CerqleErrorCode.forbidden,
+        message: 'This widget is not allowed for the current application.',
+        retryable: false,
+        httpStatus: status,
+      ),
     404 => CerqleException(
-      code: sessionRequest
-          ? CerqleErrorCode.configuration
-          : CerqleErrorCode.sessionExpired,
-      message: sessionRequest
-          ? 'The widget is missing or disabled.'
-          : 'The chat session is no longer available.',
-      retryable: !sessionRequest,
-      httpStatus: status,
-    ),
-    406 when operation == WidgetOperation.sendMedia && _isHtml(response) =>
-      const CerqleException(
+        code: sessionRequest ? CerqleErrorCode.configuration : CerqleErrorCode.sessionExpired,
+        message: sessionRequest
+            ? 'The widget is missing or disabled.'
+            : 'The chat session is no longer available.',
+        retryable: !sessionRequest,
+        httpStatus: status,
+      ),
+    406 when operation == WidgetOperation.sendMedia && _isHtml(response) => const CerqleException(
         code: CerqleErrorCode.edgeRejected,
         message: 'The server security layer rejected the media upload.',
         retryable: false,
         httpStatus: 406,
       ),
     413 when operation == WidgetOperation.sendMedia => const CerqleException(
-      code: CerqleErrorCode.attachmentRejected,
-      message: 'The attachment is too large. Choose a file under 10 MB.',
-      retryable: false,
-      httpStatus: 413,
-    ),
-    422 => CerqleException(
-      code: operation == WidgetOperation.sendMedia
-          ? CerqleErrorCode.attachmentRejected
-          : CerqleErrorCode.validation,
-      message: _validationMessage(
-        operation: operation,
-        fieldErrors: fieldErrors,
-        serverMessage: serverMessage,
+        code: CerqleErrorCode.attachmentRejected,
+        message: 'The attachment is too large. Choose a file under 10 MB.',
+        retryable: false,
+        httpStatus: 413,
       ),
-      retryable: false,
-      httpStatus: status,
-      fieldErrors: fieldErrors,
-    ),
+    422 => CerqleException(
+        code: operation == WidgetOperation.sendMedia
+            ? CerqleErrorCode.attachmentRejected
+            : CerqleErrorCode.validation,
+        message: _validationMessage(
+          operation: operation,
+          fieldErrors: fieldErrors,
+          serverMessage: serverMessage,
+        ),
+        retryable: false,
+        httpStatus: status,
+        fieldErrors: fieldErrors,
+      ),
     429 => CerqleException(
-      code: CerqleErrorCode.rateLimited,
-      message: 'Too many requests. Try again shortly.',
-      retryable: true,
-      httpStatus: status,
-      retryAfter: retryAfterSeconds == null
-          ? null
-          : Duration(seconds: retryAfterSeconds),
-    ),
+        code: CerqleErrorCode.rateLimited,
+        message: 'Too many requests. Try again shortly.',
+        retryable: true,
+        httpStatus: status,
+        retryAfter: retryAfterSeconds == null ? null : Duration(seconds: retryAfterSeconds),
+      ),
     >= 500 => CerqleException(
-      code: CerqleErrorCode.server,
-      message: 'Cerqle is temporarily unavailable.',
-      retryable: true,
-      httpStatus: status,
-    ),
+        code: CerqleErrorCode.server,
+        message: 'Cerqle is temporarily unavailable.',
+        retryable: true,
+        httpStatus: status,
+      ),
     _ => CerqleException(
-      code: CerqleErrorCode.unknown,
-      message: 'The request could not be completed.',
-      retryable: false,
-      httpStatus: status,
-    ),
+        code: CerqleErrorCode.unknown,
+        message: 'The request could not be completed.',
+        retryable: false,
+        httpStatus: status,
+      ),
   };
 }
 
@@ -130,8 +126,7 @@ String _validationMessage({
 Map<String, List<String>> _safeFieldErrors(http.Response response) {
   try {
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-    if (decoded is! Map<String, dynamic> ||
-        decoded['errors'] is! Map<String, dynamic>) {
+    if (decoded is! Map<String, dynamic> || decoded['errors'] is! Map<String, dynamic>) {
       return const <String, List<String>>{};
     }
     final errors = decoded['errors'] as Map<String, dynamic>;

@@ -45,7 +45,6 @@ class CerqleException implements Exception {
   final Duration? retryAfter;
 
   @override
-  String toString() =>
-      'CerqleException(code: $code, message: $message, '
+  String toString() => 'CerqleException(code: $code, message: $message, '
       'retryable: $retryable, httpStatus: $httpStatus)';
 }

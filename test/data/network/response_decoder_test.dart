@@ -35,9 +35,7 @@ void main() {
     expect(
       () => decoder.poll(http.Response('{"secret":"$secret"}', 200)),
       throwsA(
-        isA<CerqleException>()
-            .having((error) => error.code, 'code', CerqleErrorCode.server)
-            .having(
+        isA<CerqleException>().having((error) => error.code, 'code', CerqleErrorCode.server).having(
               (error) => error.toString(),
               'redacted description',
               isNot(contains(secret)),

@@ -21,6 +21,7 @@ void main() {
   const config = CerqleConfig(
     widgetKey: 'test-widget',
     apiBaseUrl: 'https://chat.example.com',
+    enableOneSignal: false,
     polling: CerqlePollingConfig(
       visibleInterval: Duration(minutes: 1),
       idleInterval: Duration(minutes: 1),
@@ -79,6 +80,9 @@ class _FakeMediaAdapter implements CerqleMediaAdapter {
       mimeType: 'image/png',
     );
   }
+
+  @override
+  Future<CerqleUpload?> pickDocument() async => null;
 
   @override
   Future<void> startAudioRecording() async {

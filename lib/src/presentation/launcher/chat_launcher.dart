@@ -11,12 +11,11 @@ import '../theme/resolved_theme.dart';
 import '../widgets/brand_logo.dart';
 
 /// Builds a custom launcher from controller state and an idempotent open action.
-typedef CerqleLauncherBuilder =
-    Widget Function(
-      BuildContext context,
-      CerqleChatState state,
-      VoidCallback openChat,
-    );
+typedef CerqleLauncherBuilder = Widget Function(
+  BuildContext context,
+  CerqleChatState state,
+  VoidCallback openChat,
+);
 
 /// Floating launcher that initializes chat and opens one presentation per scope.
 class CerqleChatLauncher extends StatefulWidget {
@@ -86,27 +85,67 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
     final custom = widget.builder;
     if (custom != null) return custom(context, _state, open);
 
+    final isConfigurationLoaded = _state.widget != null;
+    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    if (reduceMotion) {
+      if (!isConfigurationLoaded) return const SizedBox.shrink();
+      return _buildPositionedLauncher(
+        context,
+        child: _buildDefaultLauncherButton(context, open),
+      );
+    }
+
     return _buildPositionedLauncher(
       context,
-      child: KeyedSubtree(
-        key: const ValueKey<String>('cerqle-launcher-loaded'),
-        child: _buildDefaultLauncherButton(context, open),
+      child: AnimatedSwitcher(
+        key: const ValueKey<String>('cerqle-launcher-transition'),
+        duration: const Duration(milliseconds: 140),
+        transitionBuilder: _buildZoomTransition,
+        child: isConfigurationLoaded
+            ? KeyedSubtree(
+                key: const ValueKey<String>('cerqle-launcher-loaded'),
+                child: _buildDefaultLauncherButton(context, open),
+              )
+            : const SizedBox.shrink(
+                key: ValueKey<String>('cerqle-launcher-loading'),
+              ),
       ),
+    );
+  }
+
+  Widget _buildZoomTransition(
+    Widget child,
+    Animation<double> animation,
+  ) {
+    final scale = Tween<double>(begin: 0, end: 1).animate(
+      CurvedAnimation(
+        parent: animation,
+        curve: Curves.easeOutCubic,
+      ),
+    );
+    return ScaleTransition(
+      key: child.key == const ValueKey<String>('cerqle-launcher-loaded')
+          ? const ValueKey<String>('cerqle-launcher-zoom')
+          : null,
+      scale: scale,
+      alignment: Alignment.center,
+      child: child,
     );
   }
 
   Widget _buildPositionedLauncher(
     BuildContext context, {
     required Widget child,
-  }) => Align(
-    alignment: widget.alignment ?? _serverAlignment(_state),
-    child: SafeArea(
-      minimum: (widget.margin ?? const EdgeInsets.all(16)).resolve(
-        Directionality.of(context),
-      ),
-      child: child,
-    ),
-  );
+  }) =>
+      Align(
+        alignment: widget.alignment ?? _serverAlignment(_state),
+        child: SafeArea(
+          minimum: (widget.margin ?? const EdgeInsets.all(16)).resolve(
+            Directionality.of(context),
+          ),
+          child: child,
+        ),
+      );
 
   Widget _buildDefaultLauncherButton(BuildContext context, VoidCallback open) {
     final colors = CerqleResolvedTheme.resolve(
@@ -159,8 +198,8 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
 
   Alignment _serverAlignment(CerqleChatState state) =>
       state.widget?.launcherPosition == CerqleLauncherPosition.bottomLeft
-      ? Alignment.bottomLeft
-      : Alignment.bottomRight;
+          ? Alignment.bottomLeft
+          : Alignment.bottomRight;
 
   Future<void> _open() async {
     if (_opening) return;

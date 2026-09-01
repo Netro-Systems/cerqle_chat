@@ -111,8 +111,7 @@ class CerqleUser {
   }
 
   @override
-  String toString() =>
-      'CerqleUser(externalId: [redacted], name: [redacted], '
+  String toString() => 'CerqleUser(externalId: [redacted], name: [redacted], '
       'email: [redacted], avatarUrl: [redacted], signature: [redacted], '
       'location: [redacted], customFields: [redacted])';
 }

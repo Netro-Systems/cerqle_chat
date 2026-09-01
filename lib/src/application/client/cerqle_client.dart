@@ -28,8 +28,8 @@ class CerqleClient {
       remoteDataSource: _remoteDataSource,
       sessionStore: sessionStore ?? FlutterSecureCerqleSessionStore(),
     );
-    _realtimeConnector = realtimeConnector ??
-        PusherWidgetRealtimeConnector(httpClient: _httpClient);
+    _realtimeConnector =
+        realtimeConnector ?? PusherWidgetRealtimeConnector(httpClient: _httpClient);
   }
 
   /// Immutable configuration used for every operation.
@@ -107,6 +107,14 @@ class CerqleClient {
   Future<CerqleHandoffState> _requestHandoff() {
     final session = _requireSession();
     return _remoteDataSource.requestHandoff(
+      widgetKey: config.widgetKey,
+      token: session.token,
+    );
+  }
+
+  Future<void> _markRead() {
+    final session = _requireSession();
+    return _remoteDataSource.markRead(
       widgetKey: config.widgetKey,
       token: session.token,
     );

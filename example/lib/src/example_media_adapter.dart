@@ -50,6 +50,9 @@ class ExampleMediaAdapter implements CerqleMediaAdapter {
   }
 
   @override
+  Future<CerqleUpload?> pickDocument() async => null;
+
+  @override
   Future<void> startAudioRecording() async {
     if (_recordingSubscription != null) {
       throw StateError('An audio recording is already active.');
@@ -159,7 +162,7 @@ class ExampleMediaAdapter implements CerqleMediaAdapter {
       code: CerqleErrorCode.attachmentRejected,
       message: 'Choose a JPG, PNG, or WebP image.',
       retryable: false,
-    );
+      );
   }
 
   void _validateMedia({

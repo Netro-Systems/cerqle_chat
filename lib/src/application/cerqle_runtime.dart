@@ -31,6 +31,7 @@ part 'services/session_coordinator.dart';
 WidgetRemoteDataSource _createWidgetRemoteDataSource({
   required Uri baseUrl,
   required http.Client httpClient,
-}) => HttpWidgetRemoteDataSource(
-  networkCaller: NetworkCaller(baseUrl: baseUrl, httpClient: httpClient),
-);
+}) =>
+    HttpWidgetRemoteDataSource(
+      networkCaller: NetworkCaller(baseUrl: baseUrl, httpClient: httpClient),
+    );

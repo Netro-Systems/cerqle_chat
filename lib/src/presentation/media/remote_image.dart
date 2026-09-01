@@ -37,21 +37,20 @@ class CerqleRemoteImage extends StatelessWidget {
       fit: fit,
       alignment: alignment,
       semanticLabel: semanticLabel,
-      errorBuilder: (context, _, __) => _hasKnownRasterExtension(url)
-          ? errorBuilder(context)
-          : _buildSvg(context),
+      errorBuilder: (context, _, __) =>
+          _hasKnownRasterExtension(url) ? errorBuilder(context) : _buildSvg(context),
     );
   }
 
   Widget _buildSvg(BuildContext context) => SvgPicture.network(
-    url.toString(),
-    width: width,
-    height: height,
-    fit: fit,
-    alignment: alignment,
-    semanticsLabel: semanticLabel,
-    errorBuilder: (context, _, __) => errorBuilder(context),
-  );
+        url.toString(),
+        width: width,
+        height: height,
+        fit: fit,
+        alignment: alignment,
+        semanticsLabel: semanticLabel,
+        errorBuilder: (context, _, __) => errorBuilder(context),
+      );
 }
 
 bool _isSvgUrl(Uri url) {
@@ -66,17 +65,17 @@ bool _isSvgUrl(Uri url) {
 }
 
 bool _hasKnownRasterExtension(Uri url) => const <String>{
-  'avif',
-  'bmp',
-  'gif',
-  'heic',
-  'heif',
-  'jpeg',
-  'jpg',
-  'png',
-  'webp',
-  'wbmp',
-}.contains(_extension(url));
+      'avif',
+      'bmp',
+      'gif',
+      'heic',
+      'heif',
+      'jpeg',
+      'jpg',
+      'png',
+      'webp',
+      'wbmp',
+    }.contains(_extension(url));
 
 String _extension(Uri url) {
   if (url.pathSegments.isEmpty) return '';

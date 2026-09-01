@@ -21,12 +21,10 @@ class _PreChatFormState extends State<_PreChatForm> {
   final _emailController = TextEditingController();
 
   bool get _requiresName =>
-      widget.state.widget?.preChatFields.contains(CerqlePreChatField.name) ==
-      true;
+      widget.state.widget?.preChatFields.contains(CerqlePreChatField.name) == true;
 
   bool get _requiresEmail =>
-      widget.state.widget?.preChatFields.contains(CerqlePreChatField.email) ==
-      true;
+      widget.state.widget?.preChatFields.contains(CerqlePreChatField.email) == true;
 
   @override
   void dispose() {
@@ -51,8 +49,7 @@ class _PreChatFormState extends State<_PreChatForm> {
 
   @override
   Widget build(BuildContext context) {
-    final submitting =
-        widget.state.connection == CerqleConnectionState.connecting;
+    final submitting = widget.state.connection == CerqleConnectionState.connecting;
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Form(
@@ -63,16 +60,16 @@ class _PreChatFormState extends State<_PreChatForm> {
             Text(
               'Before we start',
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                color: widget.colors.onSurface,
-                fontWeight: FontWeight.w700,
-              ),
+                    color: widget.colors.onSurface,
+                    fontWeight: FontWeight.w700,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(
               'Please provide the information required for this chat.',
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: widget.colors.onSurfaceMuted,
-              ),
+                    color: widget.colors.onSurfaceMuted,
+                  ),
             ),
             if (_requiresName) ...<Widget>[
               const SizedBox(height: 20),
@@ -80,13 +77,10 @@ class _PreChatFormState extends State<_PreChatForm> {
                 key: const ValueKey<String>('cerqle-prechat-name'),
                 controller: _nameController,
                 enabled: !submitting,
-                textInputAction: _requiresEmail
-                    ? TextInputAction.next
-                    : TextInputAction.done,
+                textInputAction: _requiresEmail ? TextInputAction.next : TextInputAction.done,
                 decoration: const InputDecoration(labelText: 'Name'),
                 maxLength: 120,
-                validator: (value) =>
-                    value?.trim().isEmpty == true ? 'Name is required.' : null,
+                validator: (value) => value?.trim().isEmpty == true ? 'Name is required.' : null,
               ),
             ],
             if (_requiresEmail) ...<Widget>[
