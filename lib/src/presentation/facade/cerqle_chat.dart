@@ -55,6 +55,27 @@ abstract final class CerqleChat {
         .listen(_handleNotificationClick);
   }
 
+  /// Registers visitor presence in the background on the Cerqle Hub server.
+  ///
+  /// Call this when your app launches or visitor context changes:
+  /// ```dart
+  /// await CerqleChat.registerVisitor(config: config);
+  /// ```
+  static Future<void> registerVisitor({
+    required CerqleConfig config,
+    String? deviceId,
+  }) async {
+    validateCerqleRuntimeConfig(config);
+    final client = CerqleClient(config: config);
+    try {
+      await client.registerVisitorPresence(deviceId: deviceId);
+    } catch (_) {
+      // Fail silently for background presence registration
+    } finally {
+      await client.close();
+    }
+  }
+
   /// Sets or updates the custom notification tapped callback.
   static void setOnNotificationTappedCallback(
     void Function(Map<String, dynamic> payload) callback,

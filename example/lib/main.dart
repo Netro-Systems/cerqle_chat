@@ -19,36 +19,41 @@ Future<void> main() async {
   final config = CerqleConfig(
     widgetKey: widgetKey,
     apiBaseUrl: dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://cerqle.ai',
-    user: const CerqleUser(name: 'Demo User', email: 'user@demo.com'),
+    mediaAdapter: ExampleMediaAdapter(),
+    user: const CerqleUser(
+      name: 'Demo Visitor',
+      email: 'visitor@demo.com',
+      location: CerqleLocation(
+        country: 'Bangladesh',
+        countryCode: 'BD',
+        city: 'Dhaka',
+        region: 'Dhaka Division',
+        latitude: 23.8103,
+        longitude: 90.4125,
+        pageTitle: 'Cerqle Example App',
+        pageUrl: 'cerqle://example',
+      ),
+    ),
   );
 
-  // Initialize push notification handlers
+  // 1. Initialize push notification handlers
   CerqleChat.initializeNotificationHandlers(
     config: config,
     navigatorKey: navigatorKey,
   );
+
+  // 2. Register live visitor presence in background
+  unawaited(CerqleChat.registerVisitor(config: config));
 
   runApp(
     ExampleApp(config: config),
   );
 }
 
-class ExampleApp extends StatefulWidget {
+class ExampleApp extends StatelessWidget {
   const ExampleApp({super.key, required this.config});
 
   final CerqleConfig config;
-
-  @override
-  State<ExampleApp> createState() => _ExampleAppState();
-}
-
-class _ExampleAppState extends State<ExampleApp> {
-  late final ExampleMediaAdapter _mediaAdapter = ExampleMediaAdapter();
-  late final CerqleConfig _config = CerqleConfig(
-    widgetKey: widget.config.widgetKey,
-    user: widget.config.user,
-    mediaAdapter: _mediaAdapter,
-  );
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -56,14 +61,8 @@ class _ExampleAppState extends State<ExampleApp> {
         debugShowCheckedModeBanner: false,
         title: 'Cerqle Chat',
         theme: buildExampleTheme(),
-        home: ExampleHome(config: _config),
+        home: ExampleHome(config: config),
       );
-
-  @override
-  void dispose() {
-    unawaited(_mediaAdapter.dispose());
-    super.dispose();
-  }
 }
 
 class ExampleHome extends StatelessWidget {
