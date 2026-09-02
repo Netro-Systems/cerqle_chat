@@ -107,7 +107,12 @@ final class HttpWidgetRemoteDataSource implements WidgetRemoteDataSource {
     final response = await _networkCaller.get(
       ApiEndpoints.messages,
       token: token,
-      query: <String, String>{'key': widgetKey, 'after': after.toString()},
+      query: <String, String>{
+        'key': widgetKey,
+        'after': after.toString(),
+        'active': '1',
+        'open': '1',
+      },
       operation: WidgetOperation.poll,
     );
     return _decoder.poll(response);

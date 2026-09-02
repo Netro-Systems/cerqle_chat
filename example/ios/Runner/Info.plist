@@ -26,10 +26,14 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Take photos to share in Cerqle support chats.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Record voice messages for Cerqle support chats.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Select images to share in Cerqle support chats.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Attach location information in Cerqle support chats.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

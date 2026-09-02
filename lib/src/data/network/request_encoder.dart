@@ -22,12 +22,17 @@ final class WidgetRequestEncoder {
   }) =>
       <String, Object>{
         'key': widgetKey,
+        'active': true,
         if (storedSession != null) 'visitor_id': storedSession.visitorId,
         if (user?.name != null) 'name': user!.name!,
         if (user?.email != null) 'email': user!.email!,
         if (user?.avatarUrl != null) 'avatar': user!.avatarUrl!.toString(),
         if (user?.externalId != null) 'external_id': user!.externalId!,
         if (user?.signature != null) 'user_hash': user!.signature!,
+        if (user?.location?.pageTitle != null)
+          'page_title': user!.location!.pageTitle!,
+        if (user?.location?.pageUrl != null)
+          'page_url': user!.location!.pageUrl!,
         if (user?.resolvedCustomFields case final fields? when fields.isNotEmpty)
           'custom_fields': fields,
         if (deviceId != null && deviceId.trim().isNotEmpty) ...<String, Object>{
