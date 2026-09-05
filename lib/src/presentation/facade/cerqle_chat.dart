@@ -160,7 +160,7 @@ abstract final class CerqleChat {
 
   /// Opens at most one chat presentation for the configuration scope.
   ///
-  /// Uses [config.presentation] unless [presentation] overrides it. A supplied
+  /// Uses [CerqleConfig.presentation] unless [presentation] overrides it. A supplied
   /// [controller] remains owned by the caller. Throws [CerqleException]
   /// when configuration is invalid or the controller belongs to another
   /// identity/widget scope.

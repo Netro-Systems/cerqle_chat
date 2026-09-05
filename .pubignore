@@ -13,3 +13,5 @@ test/golden/failures/
 *.iml
 .idea/
 .flutter-plugins-dependencies
+doc/api/
+**/doc/api/
