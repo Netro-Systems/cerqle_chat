@@ -94,7 +94,9 @@ class CerqleChatState {
         phase: phase ?? this.phase,
         messages: messages ?? this.messages,
         connection: connection ?? this.connection,
-        widget: identical(widget, _notProvided) ? this.widget : widget as CerqleWidgetConfig?,
+        widget: identical(widget, _notProvided)
+            ? this.widget
+            : widget as CerqleWidgetConfig?,
         handoff: handoff ?? this.handoff,
         supportAvailability: supportAvailability ?? this.supportAvailability,
         visitorTyping: visitorTyping ?? this.visitorTyping,
@@ -102,7 +104,9 @@ class CerqleChatState {
             ? this.agentTyping
             : agentTyping as CerqleAgentTyping?,
         pendingCount: pendingCount ?? this.pendingCount,
-        error: identical(error, _notProvided) ? this.error : error as CerqleException?,
+        error: identical(error, _notProvided)
+            ? this.error
+            : error as CerqleException?,
       );
 }
 

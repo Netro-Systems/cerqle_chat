@@ -42,10 +42,12 @@ part '../widgets/file_preview.dart';
 part '../widgets/audio_preview.dart';
 
 /// Builds a custom chat state such as an empty or error presentation.
-typedef CerqleChatStateBuilder = Widget Function(BuildContext context, CerqleChatState state);
+typedef CerqleChatStateBuilder = Widget Function(
+    BuildContext context, CerqleChatState state);
 
 /// Builds a custom presentation for one immutable message.
-typedef CerqleMessageBuilder = Widget Function(BuildContext context, CerqleMessage message);
+typedef CerqleMessageBuilder = Widget Function(
+    BuildContext context, CerqleMessage message);
 
 /// Builds a custom composer connected to the active controller and state.
 typedef CerqleComposerBuilder = Widget Function(
@@ -153,8 +155,9 @@ class _CerqleChatViewState extends State<CerqleChatView> {
   void _onState(CerqleChatState next) {
     if (!mounted) return;
     final grew = next.messages.length > _state.messages.length;
-    final sentByVisitor =
-        grew && next.messages.isNotEmpty && next.messages.last.role == CerqleMessageRole.visitor;
+    final sentByVisitor = grew &&
+        next.messages.isNotEmpty &&
+        next.messages.last.role == CerqleMessageRole.visitor;
     setState(() => _state = next);
     if (grew && (_nearBottom || sentByVisitor)) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
@@ -169,7 +172,8 @@ class _CerqleChatViewState extends State<CerqleChatView> {
 
   void _scrollToEnd() {
     if (!mounted || !_scrollController.hasClients) return;
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     final target = _scrollController.position.minScrollExtent;
     if (reduceMotion) {
       _scrollController.jumpTo(target);
@@ -220,7 +224,8 @@ class _CerqleChatViewState extends State<CerqleChatView> {
                     ),
                   if (_state.phase == CerqleChatPhase.reconnecting)
                     ChatConnectionBanner(colors: colors),
-                  if (_state.supportAvailability == CerqleSupportAvailability.unavailable)
+                  if (_state.supportAvailability ==
+                      CerqleSupportAvailability.unavailable)
                     ChatAvailabilityBanner(state: _state, colors: colors),
                   Expanded(child: _buildBody(colors)),
                   if (_canCompose(_state)) _buildComposer(colors),
@@ -270,8 +275,9 @@ class _CerqleChatViewState extends State<CerqleChatView> {
 
   Widget _timeline(CerqleResolvedTheme colors) {
     final configuredWelcome = _state.widget?.welcomeMessage.trim();
-    final welcome =
-        configuredWelcome?.isNotEmpty == true ? configuredWelcome! : 'Hi there! How can we help?';
+    final welcome = configuredWelcome?.isNotEmpty == true
+        ? configuredWelcome!
+        : 'Hi there! How can we help?';
     const welcomeCount = 1;
     final typingCount = _state.agentTyping == null ? 0 : 1;
     return RefreshIndicator(
@@ -292,7 +298,8 @@ class _CerqleChatViewState extends State<CerqleChatView> {
                   colors: colors,
                 );
               }
-              final messageIndex = _state.messages.length - 1 - (index - typingCount);
+              final messageIndex =
+                  _state.messages.length - 1 - (index - typingCount);
               if (messageIndex < 0) {
                 return Padding(
                   padding: EdgeInsets.only(bottom: colors.messageSpacing),
@@ -326,11 +333,12 @@ class _CerqleChatViewState extends State<CerqleChatView> {
                                 _controller.removeMessage(message.localId),
                               )
                           : null,
-                      onRefresh: message.status == CerqleMessageStatus.unconfirmed
-                          ? () => unawaited(
-                                _controller.refresh().catchError((_) {}),
-                              )
-                          : null,
+                      onRefresh:
+                          message.status == CerqleMessageStatus.unconfirmed
+                              ? () => unawaited(
+                                    _controller.refresh().catchError((_) {}),
+                                  )
+                              : null,
                     ),
               );
             },
@@ -366,7 +374,8 @@ class _CerqleChatViewState extends State<CerqleChatView> {
             _HandoffAction(
               state: _state,
               colors: colors,
-              onPressed: () => unawaited(_controller.requestHumanAgent().catchError((_) {})),
+              onPressed: () =>
+                  unawaited(_controller.requestHumanAgent().catchError((_) {})),
             ),
             _Composer(
               controller: _controller,
@@ -386,7 +395,8 @@ class _CerqleChatViewState extends State<CerqleChatView> {
   }
 
   bool _canCompose(CerqleChatState state) =>
-      state.phase == CerqleChatPhase.ready || state.phase == CerqleChatPhase.reconnecting;
+      state.phase == CerqleChatPhase.ready ||
+      state.phase == CerqleChatPhase.reconnecting;
 
   @override
   void dispose() {

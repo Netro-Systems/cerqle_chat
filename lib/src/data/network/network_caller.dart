@@ -90,8 +90,9 @@ final class NetworkCaller {
     required String filename,
     required String mimeType,
   }) {
-    final uploadOperation =
-        mimeType.toLowerCase().startsWith('audio/') ? 'audio_upload' : 'image_upload';
+    final uploadOperation = mimeType.toLowerCase().startsWith('audio/')
+        ? 'audio_upload'
+        : 'image_upload';
     final request = http.MultipartRequest('POST', _endpoint(path))
       ..headers.addAll(_headers(token: token, jsonBody: false))
       ..fields.addAll(fields)
@@ -115,7 +116,8 @@ final class NetworkCaller {
         if (operation == WidgetOperation.sendMedia) {
           CerqleDebugUploadLogger.requestDispatched(uploadOperation);
         }
-        final streamed = await _httpClient.send(request).timeout(requestTimeout);
+        final streamed =
+            await _httpClient.send(request).timeout(requestTimeout);
         return http.Response.fromStream(streamed).timeout(requestTimeout);
       },
       operation: operation,

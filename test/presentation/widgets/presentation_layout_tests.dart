@@ -1,7 +1,8 @@
 part of 'chat_widgets_test.dart';
 
 void registerPresentationLayoutTests(CerqleConfig config) {
-  testWidgets('full-screen integration renders a title and embedded body', (tester) async {
+  testWidgets('full-screen integration renders a title and embedded body',
+      (tester) async {
     final runtime = _runtime(
       config,
       MockClient(
@@ -29,7 +30,8 @@ void registerPresentationLayoutTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('built-in brand colors ignore API and host primary colors', (tester) async {
+  testWidgets('built-in brand colors ignore API and host primary colors',
+      (tester) async {
     const brandConfig = CerqleConfig(
       widgetKey: 'test-widget',
       apiBaseUrl: 'https://chat.example.com',
@@ -83,7 +85,8 @@ void registerPresentationLayoutTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('branded header honors theme override and close action', (tester) async {
+  testWidgets('branded header honors theme override and close action',
+      (tester) async {
     const themedConfig = CerqleConfig(
       widgetKey: 'test-widget',
       apiBaseUrl: 'https://chat.example.com',
@@ -154,7 +157,8 @@ void registerPresentationLayoutTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('bottom sheet tracks keyboard and restores its safe height', (tester) async {
+  testWidgets('bottom sheet tracks keyboard and restores its safe height',
+      (tester) async {
     tester.view.physicalSize = const Size(400, 800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
@@ -214,7 +218,8 @@ void registerPresentationLayoutTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('default layout fits a small phone at 200 percent text scale', (tester) async {
+  testWidgets('default layout fits a small phone at 200 percent text scale',
+      (tester) async {
     tester.view.physicalSize = const Size(320, 720);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);

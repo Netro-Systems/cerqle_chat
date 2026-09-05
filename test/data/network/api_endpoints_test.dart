@@ -15,6 +15,7 @@ void main() {
       ApiEndpoints.session,
     );
 
-    expect(endpoint.toString(), 'https://chat.example.test/custom/base/widget/v1/session');
+    expect(endpoint.toString(),
+        'https://chat.example.test/custom/base/widget/v1/session');
   });
 }

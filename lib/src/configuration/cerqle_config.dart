@@ -3,6 +3,7 @@ library;
 import 'package:flutter/material.dart';
 
 import '../domain/contracts/media_adapter.dart';
+import '../domain/contracts/session_store.dart';
 import '../domain/errors/cerqle_exception.dart';
 import '../domain/events/chat_event.dart';
 
@@ -33,10 +34,12 @@ class CerqleConfig {
     this.diagnostics,
     this.oneSignalAppId = defaultOneSignalAppId,
     this.enableOneSignal = true,
+    this.sessionStore,
   });
 
   /// Default OneSignal App ID used across Cerqle ecosystem.
-  static const String defaultOneSignalAppId = 'd507871c-ac7a-4aba-aa2d-ee93a0102f17';
+  static const String defaultOneSignalAppId =
+      'd507871c-ac7a-4aba-aa2d-ee93a0102f17';
 
   /// Public widget routing key issued by Cerqle.
   final String widgetKey;
@@ -73,4 +76,7 @@ class CerqleConfig {
 
   /// Whether OneSignal push notification device registration is enabled.
   final bool enableOneSignal;
+
+  /// Optional session store override. Defaults to secure storage.
+  final CerqleSessionStore? sessionStore;
 }

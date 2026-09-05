@@ -67,7 +67,8 @@ final class PollingCoordinator {
     if (_disposed ||
         !_foreground ||
         !hasLease ||
-        (phase != CerqleChatPhase.ready && phase != CerqleChatPhase.reconnecting)) {
+        (phase != CerqleChatPhase.ready &&
+            phase != CerqleChatPhase.reconnecting)) {
       return;
     }
     final duration = nextDelay(
@@ -113,12 +114,15 @@ final class PollingCoordinator {
       final seconds = min(3 * pow(2, min(failures, 4)).toInt(), 30);
       final jitter = 0.85 + _random.nextDouble() * 0.3;
       final backoff = Duration(milliseconds: (seconds * 1000 * jitter).round());
-      final bounded = backoff > config.failureMaxInterval ? config.failureMaxInterval : backoff;
+      final bounded = backoff > config.failureMaxInterval
+          ? config.failureMaxInterval
+          : backoff;
       return bounded < minimum ? minimum : bounded;
     }
-    final configured = now.difference(lastActivity) > const Duration(seconds: 30)
-        ? config.idleInterval
-        : config.visibleInterval;
+    final configured =
+        now.difference(lastActivity) > const Duration(seconds: 30)
+            ? config.idleInterval
+            : config.visibleInterval;
     return configured < minimum ? minimum : configured;
   }
 

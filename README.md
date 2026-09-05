@@ -1,157 +1,266 @@
-# Cerqle chat
-
-![Cerqle](assets/images/cerqle-logo.svg)
+# Cerqle Chat
 
 ![pub version](https://img.shields.io/pub/v/cerqle_chat?label=cerqle_chat)
-![last commit](https://img.shields.io/github/last-commit/Netro-Systems/cerqle_chat)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-`cerqle_chat` is a Flutter package for adding Cerqle customer chat to Flutter apps. It includes secure visitor sessions, public widget API communication, realtime Pusher channel synchronization, OneSignal push notifications, foreground polling, message reconciliation, typed state and errors, and customizable Material UI with Cerqle's signature branding.
+A customizable, battery-efficient Flutter SDK for embedding Cerqle customer support chat into mobile, web, and desktop apps. It provides identity-scoped visitor sessions, real-time messaging, Pusher channel synchronization, foreground polling, prebuilt customizable UI, and push notifications.
 
-Native requests work only for widgets whose browser domain allowlist is empty; the SDK never spoofs browser `Origin` or `Referer` headers.
+---
 
-## Quick start
+## Capabilities & Platform Support
 
-Add the package and open chat with a public widget key:
+| Capability | Android / iOS | Web | macOS / Windows / Linux |
+|---|:---:|:---:|:---:|
+| **Anonymous & Signed-User Sessions** | ✅ Yes | ✅ Yes* | ✅ Yes |
+| **OneSignal Push Notifications** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Realtime Pusher Streaming** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Text, Image, Audio & File Messaging** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Foreground Polling & Sync** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Typing Indicators & Human Handoff** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Prebuilt UI (Screens, Sheets, Dialogs, Launchers)** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Required Pre-Chat Lead Forms** | ✅ Yes | ✅ Yes | ✅ Yes |
 
-```dart
-import 'package:cerqle_chat/cerqle_chat.dart';
+*\* Web secure storage requires HTTPS (or localhost during development) and is scoped to the browser origin.*
 
-final config = CerqleConfig(widgetKey: 'YOUR_WIDGET_KEY');
-
-await CerqleChat.open(context, config: config);
-```
-
-The widget key routes chat and is not a secret. Never put Cerqle management credentials or a widget identity secret in a Flutter app.
+---
 
 ## Installation
 
-The preview requires Flutter 3.24 or newer (Dart 3.5 or newer).
-
-Add the package to your app:
+Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
   cerqle_chat: ^0.1.0
 ```
 
-Android apps must use min SDK 23 because the default session store uses `flutter_secure_storage`:
+Or run:
 
-```kotlin
-defaultConfig {
-    minSdk = 23
+```bash
+flutter pub add cerqle_chat
+```
+
+### Platform Requirements
+
+* **Android**: Set `minSdk = 23` in `android/app/build.gradle` (required by `flutter_secure_storage`) and ensure `INTERNET` permission is granted:
+  ```kotlin
+  defaultConfig {
+      minSdk = 23
+  }
+  ```
+* **iOS & macOS**: Enable **Keychain Sharing** in Xcode and include a `keychain-access-groups` entitlement. The runnable [example](example) contains the required configuration.
+* **Web**: Deploy over HTTPS (browser session storage inherits the origin's security).
+
+---
+
+## Quick Start
+
+Open a functional chat interface with just a few lines of code using your public **Widget Key**:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:cerqle_chat/cerqle_chat.dart';
+
+void openSupportChat(BuildContext context) async {
+  final config = CerqleConfig(widgetKey: 'YOUR_WIDGET_KEY');
+  await CerqleChat.open(context, config: config);
 }
 ```
 
-Production apps also need Android's `INTERNET` permission. Debug-only local HTTP endpoints may require Android cleartext or Apple transport-security development configuration; non-debug SDK builds require HTTPS.
+> [!NOTE]
+> The `widgetKey` is a public routing identifier, not a secret. Never bundle Cerqle management credentials or widget secret keys in client applications.
 
-On iOS and macOS, enable Keychain Sharing and include a `keychain-access-groups` entitlement. The runnable [example](example/) contains the required configuration. Web deployments must use HTTPS (or localhost during development); browser session storage inherits the browser origin's security and backup behavior.
+---
 
-## Integration styles
+## Integration Styles
 
-Full screen:
+Cerqle provides multiple ready-to-use presentation modes to fit seamlessly into any app workflow:
+
+### 1. Full Screen
+An immersive, dedicated support page with app bar navigation:
 
 ```dart
-Navigator.of(context).push(
-  MaterialPageRoute<void>(
-    builder: (_) => CerqleChatScreen(config: config),
-  ),
-);
+import 'package:flutter/material.dart';
+import 'package:cerqle_chat/cerqle_chat.dart';
+
+void openFullScreen(BuildContext context, CerqleConfig config) {
+  Navigator.of(context).push(
+    MaterialPageRoute<void>(
+      builder: (_) => CerqleChatScreen(config: config),
+    ),
+  );
+}
 ```
 
-Floating launcher:
+### 2. Modal Bottom Sheet
+Keeps the current screen in context while sliding up the chat interface:
 
 ```dart
-Stack(
-  children: [
-    const ApplicationContent(),
-    CerqleChatLauncher(config: config),
-  ],
-)
+import 'package:flutter/material.dart';
+import 'package:cerqle_chat/cerqle_chat.dart';
+
+Future<void> openBottomSheet(BuildContext context, CerqleConfig config) async {
+  await CerqleChat.open(
+    context,
+    config: config,
+    presentation: CerqlePresentation.bottomSheet,
+  );
+}
 ```
 
-Embedded:
+### 3. Dialog Popup
+A compact, centered chat window ideal for tablets, desktops, or web:
 
 ```dart
-CerqleChatView(config: config, showHeader: true)
+import 'package:flutter/material.dart';
+import 'package:cerqle_chat/cerqle_chat.dart';
+
+Future<void> openDialog(BuildContext context, CerqleConfig config) async {
+  await CerqleChat.open(
+    context,
+    config: config,
+    presentation: CerqlePresentation.dialog,
+  );
+}
 ```
 
-Bottom sheet or dialog:
+### 4. Floating Launcher
+An expandable floating action button that overlays your screen:
 
 ```dart
-await CerqleChat.open(
-  context,
-  config: config,
-  presentation: CerqlePresentation.bottomSheet,
-);
+import 'package:flutter/material.dart';
+import 'package:cerqle_chat/cerqle_chat.dart';
+
+Widget buildFloatingLauncher(CerqleConfig config) {
+  return Stack(
+    children: [
+      const Placeholder(), // Application content
+      CerqleChatLauncher(config: config),
+    ],
+  );
+}
 ```
 
-Headless/custom UI:
+### 5. Embedded View
+Place the chat view directly inside an existing layout, drawer, or split-view:
 
 ```dart
-final client = CerqleClient(config: config);
-final controller = CerqleChatController(client: client);
-final states = controller.states.listen(renderChatState);
+import 'package:flutter/material.dart';
+import 'package:cerqle_chat/cerqle_chat.dart';
 
-await controller.initialize();
-await controller.sendText('Hello');
-
-await states.cancel();
-await controller.dispose();
-await client.close();
+Widget buildEmbeddedChat(CerqleConfig config) {
+  return CerqleChatView(
+    config: config,
+    showHeader: true,
+  );
+}
 ```
 
-When a view, screen, or launcher creates its controller, it owns and disposes the runtime. When you supply a controller, you retain ownership.
-
-## Colors and branding
-
-API colors are enabled by default. Disable them to use Cerqle's built-in purple brand palette (`#3E2A49`, secondary `#8F5FA7`):
+### 6. Headless & Custom UI
+Take full programmatic control with `CerqleChatController`:
 
 ```dart
-final config = CerqleConfig(
-  widgetKey: 'YOUR_WIDGET_KEY',
-  useApiColors: false,
-);
+import 'package:cerqle_chat/cerqle_chat.dart';
+
+Future<void> runHeadlessChat(CerqleConfig config) async {
+  final client = CerqleClient(config: config);
+  final controller = CerqleChatController(client: client);
+
+  // Listen to state changes
+  final subscription = controller.states.listen((state) {
+    debugPrint('Phase: ${state.phase}, Messages: ${state.messages.length}');
+  });
+
+  await controller.initialize();
+  await controller.sendText('Hello, I need help!');
+
+  // Cleanup
+  await subscription.cancel();
+  await controller.dispose();
+  await client.close();
+}
 ```
 
-Custom theme colors always take precedence, whether API colors are enabled or not:
+---
+
+## Configuration Reference
+
+`CerqleConfig` accepts the following options:
+
+| Property | Type | Default | Description |
+|---|---|---|---|
+| `widgetKey` | `String` | *(required)* | Public routing identifier issued by the Cerqle dashboard. |
+| `apiBaseUrl` | `String` | `'https://cerqle.ai'` | Base origin endpoint for widget API requests (`/widget/v1/*`). |
+| `user` | `CerqleUser?` | `null` | Visitor identity, profile data, and HMAC signature for verified users. |
+| `theme` | `CerqleThemeData?` | `null` | Presentation overrides for colors, bubble radius, spacing, and brightness. |
+| `useApiColors` | `bool` | `true` | When true, applies the dashboard-configured branding palette automatically. |
+| `presentation` | `CerqlePresentation` | `CerqlePresentation.fullScreen` | Default modal style (`fullScreen`, `bottomSheet`, or `dialog`) used by `CerqleChat.open`. |
+| `enableTyping` | `bool` | `true` | Whether the controller publishes throttled visitor typing updates. |
+| `mediaAdapter` | `CerqleMediaAdapter?` | `null` | Optional bridge for image selection, voice recording, and file picking. |
+| `polling` | `CerqlePollingConfig` | `const CerqlePollingConfig()` | Intervals for active (`3s`), idle (`8s`), and failure backoff (`30s`) foreground polling. |
+| `diagnostics` | `CerqleDiagnosticsCallback?` | `null` | Callback receiving redacted operational metrics and lifecycle events. |
+| `oneSignalAppId` | `String` | `CerqleConfig.defaultOneSignalAppId` | OneSignal App ID used for push notification registration. |
+| `enableOneSignal` | `bool` | `true` | Whether device push notification tokens are registered on session start. |
+| `sessionStore` | `CerqleSessionStore?` | `null` | Custom session store override (defaults to secure encrypted platform storage). |
+
+---
+
+## Key Features
+
+### 👤 Verified & Authenticated Users
+To associate chat sessions with registered users in your application, provide a `CerqleUser` along with an HMAC signature computed on your backend:
 
 ```dart
-final config = CerqleConfig(
-  widgetKey: 'YOUR_WIDGET_KEY',
-  useApiColors: false,
-  theme: const CerqleThemeData(
-    primaryColor: Color(0xFF3E2A49),
-  ),
-);
-```
+import 'package:cerqle_chat/cerqle_chat.dart';
 
-## Verified users
-
-Generate the HMAC signature on your server. The SDK must never receive the widget identity secret.
-
-```dart
 final config = CerqleConfig(
   widgetKey: 'YOUR_WIDGET_KEY',
   user: CerqleUser(
-    externalId: signedInUser.id,
-    name: signedInUser.displayName,
-    signature: signatureFetchedFromYourBackend,
+    externalId: 'user_123',
+    name: 'Jane Doe',
+    email: 'user@example.com',
+    signature: 'backend_hmac_signature',
   ),
 );
 ```
 
-Call `controller.updateUser(...)` whenever the host app switches accounts, and `controller.updateUser(null)` on logout. Logout stops polling and realtime streaming, sends a best-effort typing-off update, unlinks OneSignal device tags, deletes the active credential scope, and clears the in-memory conversation. It does not create a replacement anonymous session; the next `initialize()` or newly opened chat creates one. Sessions are securely isolated by canonical API base URL, widget key, and identity scope.
+#### Switching Accounts & Logout
+* **Switch user**: Call `controller.updateUser(newUser)` when switching accounts.
+* **Logout**: Call `controller.updateUser(null)` on logout to wipe active credentials and clear local conversation state securely.
 
-Anonymous and correctly signed identities persist across launches. Unsigned profile-only sessions stay in memory so an unverified display name or email cannot become a durable identity key or leave unreachable secure-storage records.
+---
 
-## Push notifications & Realtime sync
+### 🎨 Colors & Theming
+By default, the SDK uses the color palette configured in your Cerqle dashboard (`useApiColors: true`).
 
-The SDK includes built-in OneSignal push notification registration and Pusher realtime streaming.
-
-Initialize notification handlers in `main.dart` or during app startup:
+To customize colors locally or use custom themes:
 
 ```dart
+import 'package:flutter/material.dart';
+import 'package:cerqle_chat/cerqle_chat.dart';
+
+final config = CerqleConfig(
+  widgetKey: 'YOUR_WIDGET_KEY',
+  useApiColors: false, // Disables server palette
+  theme: const CerqleThemeData(
+    primaryColor: Color(0xFF6B46C1),
+    visitorBubbleColor: Color(0xFF6B46C1),
+    agentBubbleColor: Color(0xFFE9ECEF),
+    borderRadius: 16.0,
+  ),
+);
+```
+
+---
+
+### 🔔 Push Notifications
+The SDK provides built-in OneSignal push notification integration so visitors receive notifications when agents reply.
+
+Initialize notification handlers in `main()`:
+
+```dart
+import 'package:flutter/material.dart';
+import 'package:cerqle_chat/cerqle_chat.dart';
+
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 Future<void> main() async {
@@ -162,51 +271,78 @@ Future<void> main() async {
     user: const CerqleUser(name: 'Demo User', email: 'user@demo.com'),
   );
 
-  // Initialize push notification click handlers:
   CerqleChat.initializeNotificationHandlers(
     config: config,
     navigatorKey: navigatorKey,
   );
 
-  runApp(MyApp(navigatorKey: navigatorKey));
+  runApp(MaterialApp(navigatorKey: navigatorKey, home: const Scaffold()));
 }
 ```
 
-When a visitor starts a session, the SDK automatically collects the OneSignal device/subscription ID and submits it with the session request (`device_id`). When support agents reply, push notifications delivered to the device will automatically open the chatbox when tapped.
+When a notification is tapped, the SDK automatically opens the chatbox and refreshes messages.
 
-Realtime WebSocket channels are automatically established via Pusher (`private-widget-conversation.{conversationId}`) for instant message receipt and typing indicators.
+---
 
-## Current capabilities
+### 📷 Media & Attachments
+To enable image picking, voice messaging, and document attachments in the composer, supply a `CerqleMediaAdapter`:
 
-| Capability | Android/iOS | Web | macOS/Windows/Linux |
-|---|---:|---:|---:|
-| Anonymous and signed-user sessions | Yes | Yes* | Yes |
-| Pusher realtime streaming | Yes | Yes | Yes |
-| OneSignal push notifications | Yes | Yes | Yes |
-| Text, image/audio transport | Yes | Yes | Yes |
-| Foreground polling & auto-reconnect | Yes | Yes | Yes |
-| Typing and human handoff | Yes | Yes | Yes |
-| Prebuilt screen/view/launcher/modal UI | Yes | Yes | Yes |
-| Required name/email pre-chat | Yes | Yes | Yes |
-| Widget domain allowlist from native apps | Native policy pending | Supported by browser origin | Native policy pending |
+```dart
+import 'package:cerqle_chat/cerqle_chat.dart';
 
-\* Web secure storage requires HTTPS or localhost and is scoped to the browser origin.
+final config = CerqleConfig(
+  widgetKey: 'YOUR_WIDGET_KEY',
+  mediaAdapter: MyCustomMediaAdapter(),
+);
+```
+*(See the [example](example) app for a full reference implementation).*
 
-## Delivery and error behavior
+---
 
-- Visitor tokens are bearer credentials stored through `CerqleSessionStore`; the default implementation uses secure platform storage.
-- A send becomes `sent` only after a server response supplies a message ID.
-- A disconnected or timed-out send becomes `unconfirmed` and is not automatically retried, because the current backend has no client idempotency key.
-- Foreground polling delivers bot/human replies and pauses when the app is backgrounded or no synchronization listener exists.
-- Session and poll responses are ordered and deduplicated by server ID. Send responses never advance the receive cursor, preventing missed gaps.
-- Required pre-chat uses a second authenticated session request after configuration is loaded.
-- Diagnostics are structured and redacted; tokens, signatures, PII, message bodies, and attachment URLs are never included.
+### 📝 Pre-Chat Forms
+When a widget requires pre-chat information (such as name or email), the built-in UI collects and submits the required fields automatically before initiating chat. Known fields already set on `config.user` are automatically populated.
 
-## Development
+For headless integrations, submit manually via:
+```dart
+import 'package:cerqle_chat/cerqle_chat.dart';
+
+Future<void> submitLead(CerqleChatController controller) async {
+  await controller.submitPreChat(
+    const CerqlePreChatData(name: 'Jane Doe', email: 'jane@example.com'),
+  );
+}
+```
+
+---
+
+## Delivery & Reliability Behavior
+
+* **Platform Security**: Visitor tokens are bearer credentials persisted via `CerqleSessionStore` using platform-native secure storage (`flutter_secure_storage`).
+* **Authoritative Confirmation**: Messages transition from `pending` to `sent` only upon server receipt and ID issuance.
+* **Network Failures & Unconfirmed State**: If a request disconnects or times out before receiving a response, the message is marked `unconfirmed` rather than failed, avoiding duplicate message sends.
+* **Battery-Efficient Sync**: Foreground polling and Pusher realtime channels synchronize replies and pause automatically when the application is backgrounded or when chat is closed.
+* **Safe Diagnostics**: Diagnostic callbacks emit strictly redacted operational telemetry (durations, error codes, HTTP statuses) without logging PII, bearer tokens, or message content.
+
+---
+
+## Development & Testing
 
 ```bash
+# Get dependencies
 flutter pub get
+
+# Format code
 dart format --output=none --set-exit-if-changed .
+
+# Run static analysis
 flutter analyze
+
+# Run unit tests
 flutter test
 ```
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

@@ -1,7 +1,8 @@
 part of 'chat_widgets_test.dart';
 
 void registerLauncherTests(CerqleConfig config) {
-  testWidgets('launcher has an accessible 48dp target and server alignment', (tester) async {
+  testWidgets('launcher has an accessible 48dp target and server alignment',
+      (tester) async {
     final runtime = _runtime(
       config,
       MockClient(
@@ -39,7 +40,8 @@ void registerLauncherTests(CerqleConfig config) {
 
   for (final alignment in <Alignment?>[null, Alignment.topLeft]) {
     final alignmentName = alignment == null ? 'server' : 'custom';
-    testWidgets('launcher zoom stays fixed with $alignmentName alignment', (tester) async {
+    testWidgets('launcher zoom stays fixed with $alignmentName alignment',
+        (tester) async {
       final response = Completer<http.Response>();
       final runtime = _runtime(
         config,
@@ -113,7 +115,8 @@ void registerLauncherTests(CerqleConfig config) {
     });
   }
 
-  testWidgets('custom launcher builder retains loading-state control', (tester) async {
+  testWidgets('custom launcher builder retains loading-state control',
+      (tester) async {
     final response = Completer<http.Response>();
     final runtime = _runtime(
       config,
@@ -137,7 +140,8 @@ void registerLauncherTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('launcher skips its entrance transition for reduced motion', (tester) async {
+  testWidgets('launcher skips its entrance transition for reduced motion',
+      (tester) async {
     final response = Completer<http.Response>();
     final runtime = _runtime(
       config,
@@ -175,7 +179,8 @@ void registerLauncherTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('remote brand assets use contained web-widget sizing', (tester) async {
+  testWidgets('remote brand assets use contained web-widget sizing',
+      (tester) async {
     final runtime = _runtime(
       config,
       MockClient(

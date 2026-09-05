@@ -65,7 +65,9 @@ class _CerqleChatScreenState extends State<CerqleChatScreen> {
         config: widget.config,
         controller: _controller,
         showHeader: usesBrandedHeader,
-        onClose: usesBrandedHeader && navigator.canPop() ? () => navigator.maybePop() : null,
+        onClose: usesBrandedHeader && navigator.canPop()
+            ? () => navigator.maybePop()
+            : null,
       ),
     );
   }

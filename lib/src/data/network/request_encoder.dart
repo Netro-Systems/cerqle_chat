@@ -33,7 +33,8 @@ final class WidgetRequestEncoder {
           'page_title': user!.location!.pageTitle!,
         if (user?.location?.pageUrl != null)
           'page_url': user!.location!.pageUrl!,
-        if (user?.resolvedCustomFields case final fields? when fields.isNotEmpty)
+        if (user?.resolvedCustomFields case final fields?
+            when fields.isNotEmpty)
           'custom_fields': fields,
         if (deviceId != null && deviceId.trim().isNotEmpty) ...<String, Object>{
           'device_id': deviceId.trim(),
@@ -199,7 +200,8 @@ final class WidgetRequestEncoder {
     final matchingEntry = supported.entries.where(
       (entry) => filename.endsWith(entry.key),
     );
-    if (matchingEntry.isEmpty || !matchingEntry.first.value.contains(mimeType)) {
+    if (matchingEntry.isEmpty ||
+        !matchingEntry.first.value.contains(mimeType)) {
       throw const CerqleException(
         code: CerqleErrorCode.attachmentRejected,
         message: 'The attachment filename and MIME type are not supported.',

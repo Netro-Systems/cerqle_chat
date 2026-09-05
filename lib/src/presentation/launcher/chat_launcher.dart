@@ -86,7 +86,8 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
     if (custom != null) return custom(context, _state, open);
 
     final isConfigurationLoaded = _state.widget != null;
-    final reduceMotion = MediaQuery.maybeOf(context)?.disableAnimations ?? false;
+    final reduceMotion =
+        MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (reduceMotion) {
       if (!isConfigurationLoaded) return const SizedBox.shrink();
       return _buildPositionedLauncher(

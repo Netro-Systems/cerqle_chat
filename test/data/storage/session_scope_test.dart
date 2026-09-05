@@ -28,8 +28,10 @@ void main() {
   });
 
   test('sessions are isolated by widget, base URL, and signed identity', () {
-    const signatureA = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
-    const signatureB = 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+    const signatureA =
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+    const signatureB =
+        'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
     const userA = CerqleUser(
       externalId: 'customer-top-secret-a',
       signature: signatureA,
@@ -57,7 +59,8 @@ void main() {
       user: userA,
     );
 
-    expect(<String>{anonymous, signedA, signedB, otherWidget, otherHost}, hasLength(5));
+    expect(<String>{anonymous, signedA, signedB, otherWidget, otherHost},
+        hasLength(5));
     expect(signedA, isNot(contains('customer-top-secret-a')));
     expect(signedA, isNot(contains(signatureA)));
   });

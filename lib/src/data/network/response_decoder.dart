@@ -23,8 +23,9 @@ final class WidgetResponseDecoder {
     final json = _decodeObject(response);
     final visitorId = _requiredString(json, 'visitor_id');
     final token = _requiredString(json, 'token');
-    final conversationId =
-        _intOrNull(json['conversation_id']) ?? _intOrNull(json['conversation']?['id']) ?? 0;
+    final conversationId = _intOrNull(json['conversation_id']) ??
+        _intOrNull(json['conversation']?['id']) ??
+        0;
     final configJson = _requiredObject(json, 'config');
     final handoffObj = json['handoff'] ?? json['handover'];
     if (handoffObj == null) throw _invalidResponse();
@@ -48,7 +49,8 @@ final class WidgetResponseDecoder {
     final json = _decodeObject(response);
     if (json['messages'] is! List<dynamic>) throw _invalidResponse();
     final typing = json['agent_typing'];
-    final isTyping = typing is Map<String, dynamic> && typing['is_typing'] == true;
+    final isTyping =
+        typing is Map<String, dynamic> && typing['is_typing'] == true;
     final typingName = typing is Map<String, dynamic> ? typing['name'] : null;
     final handoffObj = json['handoff'] ?? json['handover'];
     if (handoffObj == null) throw _invalidResponse();
@@ -56,8 +58,9 @@ final class WidgetResponseDecoder {
       messages: _parseMessages(json['messages']),
       supportAvailability: _parseAvailability(json['online'] == true),
       handoff: _parseHandoff(handoffObj),
-      agentTyping:
-          isTyping ? CerqleAgentTyping(name: typingName is String ? typingName : null) : null,
+      agentTyping: isTyping
+          ? CerqleAgentTyping(name: typingName is String ? typingName : null)
+          : null,
     );
   }
 
@@ -172,12 +175,15 @@ final class WidgetResponseDecoder {
       _ => CerqleMessageRole.unknown,
     };
 
-    final attachmentData = json['attachment'] ?? json['media'] ?? json['payload'];
+    final attachmentData =
+        json['attachment'] ?? json['media'] ?? json['payload'];
     String? rawAttachmentUrl = _stringOrNull(json['attachment_url']) ??
         _stringOrNull(json['file_url']) ??
         _stringOrNull(json['media_url']);
-    String? filename = _stringOrNull(json['filename']) ?? _stringOrNull(json['file_name']);
-    String? mimeType = _stringOrNull(json['mime_type']) ?? _stringOrNull(json['mimeType']);
+    String? filename =
+        _stringOrNull(json['filename']) ?? _stringOrNull(json['file_name']);
+    String? mimeType =
+        _stringOrNull(json['mime_type']) ?? _stringOrNull(json['mimeType']);
 
     if (rawAttachmentUrl == null) {
       if (attachmentData is String && attachmentData.trim().isNotEmpty) {
@@ -190,7 +196,9 @@ final class WidgetResponseDecoder {
               attachmentData['link'],
         );
         filename ??= _stringOrNull(
-          attachmentData['filename'] ?? attachmentData['name'] ?? attachmentData['file_name'],
+          attachmentData['filename'] ??
+              attachmentData['name'] ??
+              attachmentData['file_name'],
         );
         mimeType ??= _stringOrNull(
           attachmentData['mime_type'] ?? attachmentData['mimeType'],
@@ -233,7 +241,9 @@ final class WidgetResponseDecoder {
               filename: filename,
               mimeType: mimeType,
             ),
-      senderName: role == CerqleMessageRole.agent ? _stringOrNull(json['agent_name']) : null,
+      senderName: role == CerqleMessageRole.agent
+          ? _stringOrNull(json['agent_name'])
+          : null,
       sentBy: sentBy,
     );
   }
@@ -262,11 +272,13 @@ final class WidgetResponseDecoder {
     final mime = (mimeType ?? '').toLowerCase();
 
     if (mime.startsWith('image/') ||
-        RegExp(r'\.(jpg|jpeg|png|webp|gif|svg|heic|heif)$').hasMatch(nameOrPath)) {
+        RegExp(r'\.(jpg|jpeg|png|webp|gif|svg|heic|heif)$')
+            .hasMatch(nameOrPath)) {
       return CerqleMessageType.image;
     }
     if (mime.startsWith('audio/') ||
-        RegExp(r'\.(mp3|wav|m4a|aac|ogg|oga|webm|opus|amr)$').hasMatch(nameOrPath)) {
+        RegExp(r'\.(mp3|wav|m4a|aac|ogg|oga|webm|opus|amr)$')
+            .hasMatch(nameOrPath)) {
       return CerqleMessageType.audio;
     }
     if (hasAttachment) {
@@ -288,7 +300,9 @@ final class WidgetResponseDecoder {
       return CerqleMessageStatus.read;
     }
 
-    if (json['delivered_at'] != null || json['is_delivered'] == true || json['delivered'] == true) {
+    if (json['delivered_at'] != null ||
+        json['is_delivered'] == true ||
+        json['delivered'] == true) {
       return CerqleMessageStatus.delivered;
     }
 
@@ -305,7 +319,11 @@ final class WidgetResponseDecoder {
     return switch (raw) {
       'read' || 'seen' || 'viewed' || 'opened' => CerqleMessageStatus.read,
       'delivered' || 'received' || 'reached' => CerqleMessageStatus.delivered,
-      'failed' || 'error' || 'undelivered' || 'rejected' => CerqleMessageStatus.failed,
+      'failed' ||
+      'error' ||
+      'undelivered' ||
+      'rejected' =>
+        CerqleMessageStatus.failed,
       'sending' || 'pending' || 'queued' => CerqleMessageStatus.pending,
       'unconfirmed' => CerqleMessageStatus.unconfirmed,
       _ => CerqleMessageStatus.sent,
@@ -343,11 +361,14 @@ final class WidgetResponseDecoder {
       }
     }
     final rawColor = _stringOrNull(json['primary_color']) ?? '#3E2A49';
-    final color = RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(rawColor) ? rawColor : '#3E2A49';
+    final color =
+        RegExp(r'^#[0-9a-fA-F]{6}$').hasMatch(rawColor) ? rawColor : '#3E2A49';
     return CerqleWidgetConfig(
       title: _stringOrNull(json['title']) ?? 'Chat with us',
-      subtitle: _stringOrNull(json['subtitle']) ?? 'We typically reply in a few minutes',
-      welcomeMessage: _stringOrNull(json['welcome_message']) ?? 'Hi there! How can we help?',
+      subtitle: _stringOrNull(json['subtitle']) ??
+          'We typically reply in a few minutes',
+      welcomeMessage: _stringOrNull(json['welcome_message']) ??
+          'Hi there! How can we help?',
       agentName: _stringOrNull(json['agent_name']) ?? 'Support',
       avatarUrl: _safeRemoteUri(json['avatar_url']),
       primaryColorHex: color,
@@ -384,10 +405,10 @@ final class WidgetResponseDecoder {
       return const CerqleHandoffState.unavailable();
     }
     final enabled = value['enabled'] == true || value['available'] == true;
-    final eligible =
-        value['eligible'] == true || (value['available'] == true && value['requested'] != true);
-    final statusStr =
-        value['status'] as String? ?? (value['requested'] == true ? 'connected' : 'bot');
+    final eligible = value['eligible'] == true ||
+        (value['available'] == true && value['requested'] != true);
+    final statusStr = value['status'] as String? ??
+        (value['requested'] == true ? 'connected' : 'bot');
     if (!enabled) {
       return const CerqleHandoffState.unavailable();
     }
@@ -400,7 +421,8 @@ final class WidgetResponseDecoder {
     return const CerqleHandoffState(status: CerqleHandoffStatus.unavailable);
   }
 
-  CerqleSupportAvailability _parseAvailability(Object? value) => switch (value) {
+  CerqleSupportAvailability _parseAvailability(Object? value) =>
+      switch (value) {
         true => CerqleSupportAvailability.available,
         false => CerqleSupportAvailability.unavailable,
         _ => CerqleSupportAvailability.unknown,

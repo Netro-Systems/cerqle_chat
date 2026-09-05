@@ -1,0 +1,15 @@
+/AGENTS.md
+/android/
+/ios/
+/build/
+**/GeneratedPluginRegistrant.*
+**/local.properties
+**/Flutter/ephemeral/
+**/Flutter/flutter_export_environment.sh
+**/Flutter/Generated.xcconfig
+test/golden/failures/
+.DS_Store
+*.log
+*.iml
+.idea/
+.flutter-plugins-dependencies

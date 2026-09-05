@@ -22,7 +22,8 @@ final class PreChatValidator {
   }
 
   void validateConfiguration(CerqleWidgetConfig widget) {
-    if (widget.requiresPreChat && widget.preChatFields.contains(CerqlePreChatField.unknown)) {
+    if (widget.requiresPreChat &&
+        widget.preChatFields.contains(CerqlePreChatField.unknown)) {
       throw const CerqleException(
         code: CerqleErrorCode.unsupported,
         message: 'This widget requires an unsupported pre-chat field.',
@@ -31,10 +32,20 @@ final class PreChatValidator {
     }
   }
 
-  void validateSubmission(CerqleWidgetConfig widget, CerqlePreChatData data) {
-    final name = data.name?.trim() ?? '';
-    final email = data.email?.trim() ?? '';
-    if (widget.preChatFields.contains(CerqlePreChatField.name) && name.isEmpty) {
+  void validateSubmission(
+    CerqleWidgetConfig widget,
+    CerqlePreChatData data, {
+    CerqleUser? user,
+  }) {
+    final name = (data.name?.trim().isNotEmpty == true ? data.name : user?.name)
+            ?.trim() ??
+        '';
+    final email =
+        (data.email?.trim().isNotEmpty == true ? data.email : user?.email)
+                ?.trim() ??
+            '';
+    if (widget.preChatFields.contains(CerqlePreChatField.name) &&
+        name.isEmpty) {
       throw const CerqleException(
         code: CerqleErrorCode.validation,
         message: 'Name is required.',
@@ -51,7 +62,8 @@ final class PreChatValidator {
         retryable: false,
       );
     }
-    if (widget.preChatFields.contains(CerqlePreChatField.email) && email.isEmpty) {
+    if (widget.preChatFields.contains(CerqlePreChatField.email) &&
+        email.isEmpty) {
       throw const CerqleException(
         code: CerqleErrorCode.validation,
         message: 'Email is required.',
@@ -62,7 +74,8 @@ final class PreChatValidator {
       );
     }
     if (email.length > 190 ||
-        (email.isNotEmpty && !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email))) {
+        (email.isNotEmpty &&
+            !RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$').hasMatch(email))) {
       throw const CerqleException(
         code: CerqleErrorCode.validation,
         message: 'Enter a valid email address.',

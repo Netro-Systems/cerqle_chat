@@ -1,7 +1,8 @@
 part of 'chat_controller_test.dart';
 
 void registerSessionTests(CerqleConfig config) {
-  test('parses history, unknown fields, and unknown enum values safely', () async {
+  test('parses history, unknown fields, and unknown enum values safely',
+      () async {
     final store = MemorySessionStore();
     final httpClient = MockClient((request) async {
       expect(request.url.path, '/base/widget/v1/session');
@@ -27,7 +28,8 @@ void registerSessionTests(CerqleConfig config) {
     await controller.initialize();
 
     expect(controller.state.phase, CerqleChatPhase.ready);
-    expect(controller.state.messages.map((item) => item.serverId), <int?>[2, 3]);
+    expect(
+        controller.state.messages.map((item) => item.serverId), <int?>[2, 3]);
     expect(
       controller.state.messages.last.role,
       CerqleMessageRole.unknown,
@@ -42,7 +44,8 @@ void registerSessionTests(CerqleConfig config) {
     await client.close();
   });
 
-  test('uses the web-widget primary fallback for missing or invalid colors', () async {
+  test('uses the web-widget primary fallback for missing or invalid colors',
+      () async {
     var calls = 0;
     final httpClient = MockClient((request) async {
       calls++;

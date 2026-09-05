@@ -39,7 +39,8 @@ final class MessageReconciler {
     return messages;
   }
 
-  int greatestServerId(List<CerqleMessage> messages, {required int fallback}) => messages.fold<int>(
+  int greatestServerId(List<CerqleMessage> messages, {required int fallback}) =>
+      messages.fold<int>(
         fallback,
         (greatest, message) => message.serverId == null
             ? greatest
