@@ -17,7 +17,8 @@ final class CerqleDebugUploadLogger {
 
   static void selectionStarted() => _debug('image_upload: selection started');
 
-  static void selectionCancelled() => _debug('image_upload: selection cancelled');
+  static void selectionCancelled() =>
+      _debug('image_upload: selection cancelled');
 
   static void selectionReady({
     required int sizeBytes,
@@ -50,7 +51,8 @@ final class CerqleDebugUploadLogger {
         '(field=attachment, sizeBytes=$sizeBytes, mimeType=$mimeType)',
       );
 
-  static void requestDispatched(String operation) => _debug('$operation: HTTP request dispatched');
+  static void requestDispatched(String operation) =>
+      _debug('$operation: HTTP request dispatched');
 
   static void responseReceived(
     String operation,

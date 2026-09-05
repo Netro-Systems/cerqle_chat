@@ -28,7 +28,8 @@ class CerqleStoredSession {
   final int schemaVersion;
 
   @override
-  String toString() => 'CerqleStoredSession(visitorId: [redacted], token: [redacted], '
+  String toString() =>
+      'CerqleStoredSession(visitorId: [redacted], token: [redacted], '
       'savedAt: $savedAt, preChatCompleted: $preChatCompleted, '
       'schemaVersion: $schemaVersion)';
 }

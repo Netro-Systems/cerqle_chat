@@ -18,7 +18,7 @@ void main() {
 
     final logo = tester.widget<SvgPicture>(find.byType(SvgPicture));
     final loader = logo.bytesLoader as SvgAssetLoader;
-    expect(loader.assetName, 'assets/images/cerqle-icon.svg');
+    expect(loader.assetName, 'assets/images/cerqle-icon-purple-bg.svg');
     expect(loader.packageName, 'cerqle_chat');
   });
 }

@@ -24,13 +24,15 @@ void main() {
   );
 
   setUp(() {
-    final view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.single;
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.single;
     view.physicalSize = const Size(400, 800);
     view.devicePixelRatio = 1;
   });
 
   tearDown(() {
-    final view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.single;
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.single;
     view.resetPhysicalSize();
     view.resetDevicePixelRatio();
   });
@@ -180,7 +182,8 @@ void main() {
   testWidgets('launcher remains pixel stable', (tester) async {
     final runtime = _Runtime(
       config,
-      MockClient((_) async => http.Response(jsonEncode(sessionResponse()), 200)),
+      MockClient(
+          (_) async => http.Response(jsonEncode(sessionResponse()), 200)),
     );
     await tester.pumpWidget(_goldenApp(
       CerqleChatLauncher(config: config, controller: runtime.controller),
@@ -227,12 +230,15 @@ void main() {
     await runtime.dispose();
   });
 
-  testWidgets('small high-text-scale layout remains pixel stable', (tester) async {
-    final view = TestWidgetsFlutterBinding.instance.platformDispatcher.views.single;
+  testWidgets('small high-text-scale layout remains pixel stable',
+      (tester) async {
+    final view =
+        TestWidgetsFlutterBinding.instance.platformDispatcher.views.single;
     view.physicalSize = const Size(320, 568);
     final runtime = _Runtime(
       config,
-      MockClient((_) async => http.Response(jsonEncode(sessionResponse()), 200)),
+      MockClient(
+          (_) async => http.Response(jsonEncode(sessionResponse()), 200)),
     );
     await tester.pumpWidget(_goldenApp(
       CerqleChatView(config: config, controller: runtime.controller),

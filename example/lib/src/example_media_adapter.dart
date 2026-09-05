@@ -162,7 +162,7 @@ class ExampleMediaAdapter implements CerqleMediaAdapter {
       code: CerqleErrorCode.attachmentRejected,
       message: 'Choose a JPG, PNG, or WebP image.',
       retryable: false,
-      );
+    );
   }
 
   void _validateMedia({

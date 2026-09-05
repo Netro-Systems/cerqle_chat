@@ -26,7 +26,8 @@ class _MessageBubble extends StatelessWidget {
     final visitor = message.role == CerqleMessageRole.visitor;
     final deliveryLabel = visitor ? ', ${_deliveryLabel(message.status)}' : '';
     return Semantics(
-      label: '${visitor ? 'Your' : 'Support'} message. ${message.body}$deliveryLabel',
+      label:
+          '${visitor ? 'Your' : 'Support'} message. ${message.body}$deliveryLabel',
       child: _BubbleLayout(
         visitor: visitor,
         widgetConfig: widgetConfig,
@@ -66,7 +67,9 @@ class _MessageBubble extends StatelessWidget {
                 ],
               ],
             ),
-            if (onRetry != null || onRefresh != null || onRemove != null) ...<Widget>[
+            if (onRetry != null ||
+                onRefresh != null ||
+                onRemove != null) ...<Widget>[
               const SizedBox(height: 4),
               Wrap(
                 spacing: 4,
@@ -103,7 +106,8 @@ class _MessageBubble extends StatelessWidget {
     CerqleResolvedTheme colors,
   ) =>
       TextButton.styleFrom(
-        foregroundColor: visitor ? colors.onVisitorBubble : colors.onAgentBubble,
+        foregroundColor:
+            visitor ? colors.onVisitorBubble : colors.onAgentBubble,
       );
 
   static String _time(DateTime value) {
@@ -124,7 +128,9 @@ class _MessageBubble extends StatelessWidget {
   static IconData _deliveryIcon(CerqleMessageStatus status) => switch (status) {
         CerqleMessageStatus.pending => Icons.schedule,
         CerqleMessageStatus.sent => Icons.check,
-        CerqleMessageStatus.delivered || CerqleMessageStatus.read => Icons.done_all,
+        CerqleMessageStatus.delivered ||
+        CerqleMessageStatus.read =>
+          Icons.done_all,
         CerqleMessageStatus.failed => Icons.error_outline,
         CerqleMessageStatus.unconfirmed => Icons.help_outline,
       };
@@ -134,7 +140,8 @@ class _MessageBubble extends StatelessWidget {
     CerqleMessageStatus status,
   ) =>
       switch (status) {
-        CerqleMessageStatus.pending => colors.onVisitorBubble.withValues(alpha: 0.60),
+        CerqleMessageStatus.pending =>
+          colors.onVisitorBubble.withValues(alpha: 0.60),
         CerqleMessageStatus.sent ||
         CerqleMessageStatus.delivered ||
         CerqleMessageStatus.unconfirmed =>

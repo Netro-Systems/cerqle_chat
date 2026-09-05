@@ -14,8 +14,9 @@ class _ChatHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final widgetConfig = state.widget;
-    final title =
-        widgetConfig?.title.trim().isNotEmpty == true ? widgetConfig!.title : 'Chat with us';
+    final title = widgetConfig?.title.trim().isNotEmpty == true
+        ? widgetConfig!.title
+        : 'Chat with us';
     final subtitle = _subtitle(state);
     return Material(
       key: const ValueKey<String>('cerqle-chat-header'),
@@ -54,10 +55,10 @@ class _ChatHeader extends StatelessWidget {
                           width: 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color:
-                                state.supportAvailability == CerqleSupportAvailability.unavailable
-                                    ? colors.onPrimary.withValues(alpha: 0.45)
-                                    : const Color(0xFF4ADE80),
+                            color: state.supportAvailability ==
+                                    CerqleSupportAvailability.unavailable
+                                ? colors.onPrimary.withValues(alpha: 0.45)
+                                : const Color(0xFF4ADE80),
                             shape: BoxShape.circle,
                           ),
                         ),
@@ -67,7 +68,10 @@ class _ChatHeader extends StatelessWidget {
                             subtitle,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelSmall
+                                ?.copyWith(
                                   color: colors.onPrimary.withValues(
                                     alpha: 0.92,
                                   ),

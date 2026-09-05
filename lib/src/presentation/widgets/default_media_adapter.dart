@@ -40,10 +40,12 @@ class _DefaultMediaAdapter implements CerqleMediaAdapter {
   }
 
   /// Opens camera to capture an image.
-  Future<CerqleUpload?> pickCameraImage() => pickImage(source: ImageSource.camera);
+  Future<CerqleUpload?> pickCameraImage() =>
+      pickImage(source: ImageSource.camera);
 
   /// Opens gallery to select an image.
-  Future<CerqleUpload?> pickGalleryImage() => pickImage(source: ImageSource.gallery);
+  Future<CerqleUpload?> pickGalleryImage() =>
+      pickImage(source: ImageSource.gallery);
 
   @override
   Future<CerqleUpload?> pickDocument() async {
@@ -82,7 +84,8 @@ class _DefaultMediaAdapter implements CerqleMediaAdapter {
 
     final bytes = await file.readAsBytes();
     final filename = file.name.trim();
-    final mimeType = (file.mimeType ?? _documentMimeType(filename)).toLowerCase();
+    final mimeType =
+        (file.mimeType ?? _documentMimeType(filename)).toLowerCase();
     _validateMedia(
       bytes: bytes,
       filename: filename,

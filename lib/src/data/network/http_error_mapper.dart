@@ -47,14 +47,17 @@ CerqleException mapWidgetHttpError(
         httpStatus: status,
       ),
     404 => CerqleException(
-        code: sessionRequest ? CerqleErrorCode.configuration : CerqleErrorCode.sessionExpired,
+        code: sessionRequest
+            ? CerqleErrorCode.configuration
+            : CerqleErrorCode.sessionExpired,
         message: sessionRequest
             ? 'The widget is missing or disabled.'
             : 'The chat session is no longer available.',
         retryable: !sessionRequest,
         httpStatus: status,
       ),
-    406 when operation == WidgetOperation.sendMedia && _isHtml(response) => const CerqleException(
+    406 when operation == WidgetOperation.sendMedia && _isHtml(response) =>
+      const CerqleException(
         code: CerqleErrorCode.edgeRejected,
         message: 'The server security layer rejected the media upload.',
         retryable: false,
@@ -84,7 +87,9 @@ CerqleException mapWidgetHttpError(
         message: 'Too many requests. Try again shortly.',
         retryable: true,
         httpStatus: status,
-        retryAfter: retryAfterSeconds == null ? null : Duration(seconds: retryAfterSeconds),
+        retryAfter: retryAfterSeconds == null
+            ? null
+            : Duration(seconds: retryAfterSeconds),
       ),
     >= 500 => CerqleException(
         code: CerqleErrorCode.server,
@@ -126,7 +131,8 @@ String _validationMessage({
 Map<String, List<String>> _safeFieldErrors(http.Response response) {
   try {
     final decoded = jsonDecode(utf8.decode(response.bodyBytes));
-    if (decoded is! Map<String, dynamic> || decoded['errors'] is! Map<String, dynamic>) {
+    if (decoded is! Map<String, dynamic> ||
+        decoded['errors'] is! Map<String, dynamic>) {
       return const <String, List<String>>{};
     }
     final errors = decoded['errors'] as Map<String, dynamic>;

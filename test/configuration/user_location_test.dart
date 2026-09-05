@@ -2,7 +2,9 @@ import 'package:cerqle_chat/cerqle_chat.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('CerqleLocation maps strongly-typed location fields into standard webchat keys', () {
+  test(
+      'CerqleLocation maps strongly-typed location fields into standard webchat keys',
+      () {
     const location = CerqleLocation(
       country: 'Bangladesh',
       countryCode: 'BD',

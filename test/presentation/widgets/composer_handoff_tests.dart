@@ -1,7 +1,8 @@
 part of 'chat_widgets_test.dart';
 
 void registerComposerHandoffTests(CerqleConfig config) {
-  testWidgets('default composer picks images and records voice through adapter', (tester) async {
+  testWidgets('default composer picks images and records voice through adapter',
+      (tester) async {
     final mediaAdapter = _FakeMediaAdapter();
     final mediaConfig = CerqleConfig(
       widgetKey: 'test-widget',
@@ -23,7 +24,8 @@ void registerComposerHandoffTests(CerqleConfig config) {
         if (request.url.path.endsWith('/session')) {
           return http.Response(jsonEncode(sessionResponse()), 200);
         }
-        if (request.method == 'POST' && request.url.path.endsWith('/messages')) {
+        if (request.method == 'POST' &&
+            request.url.path.endsWith('/messages')) {
           uploadedContentTypes.add(request.headers['content-type'] ?? '');
           uploadedBodies.add(request.bodyBytes);
           uploadCount++;
@@ -113,7 +115,8 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('eligible handoff uses the human-agent prompt and connects', (tester) async {
+  testWidgets('eligible handoff uses the human-agent prompt and connects',
+      (tester) async {
     var handoffCalls = 0;
     final runtime = _runtime(
       config,
@@ -162,7 +165,8 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('terminal server failure is actionable and hides composer', (tester) async {
+  testWidgets('terminal server failure is actionable and hides composer',
+      (tester) async {
     final runtime = _runtime(
       config,
       MockClient((_) async => http.Response('{}', 404)),
@@ -180,7 +184,8 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('custom empty builder receives immutable ready state', (tester) async {
+  testWidgets('custom empty builder receives immutable ready state',
+      (tester) async {
     final runtime = _runtime(
       config,
       MockClient(

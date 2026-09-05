@@ -41,7 +41,8 @@ void registerDeliveryEdgeCaseTests(CerqleConfig config) {
     await client.close();
   });
 
-  test('ambiguous send is not heuristically merged with an identical echo', () async {
+  test('ambiguous send is not heuristically merged with an identical echo',
+      () async {
     var sent = false;
     final httpClient = MockClient((request) async {
       if (request.url.path.endsWith('/session')) {
@@ -77,7 +78,9 @@ void registerDeliveryEdgeCaseTests(CerqleConfig config) {
     await expectLater(controller.sendText('Same words'), throwsException);
     await controller.refresh();
 
-    final matches = controller.state.messages.where((item) => item.body == 'Same words').toList();
+    final matches = controller.state.messages
+        .where((item) => item.body == 'Same words')
+        .toList();
     expect(matches, hasLength(2));
     expect(
       matches.map((item) => item.status),
@@ -149,7 +152,8 @@ void registerDeliveryEdgeCaseTests(CerqleConfig config) {
     await client.close();
   });
 
-  test('typing throttle expires locally and sends a single stop update', () async {
+  test('typing throttle expires locally and sends a single stop update',
+      () async {
     final typingValues = <bool>[];
     final httpClient = MockClient((request) async {
       if (request.url.path.endsWith('/session')) {
@@ -204,7 +208,8 @@ void registerDeliveryEdgeCaseTests(CerqleConfig config) {
     await client.close();
   }, timeout: const Timeout(Duration(seconds: 10)));
 
-  test('reset deletes the active credential scope and returns to idle', () async {
+  test('reset deletes the active credential scope and returns to idle',
+      () async {
     final store = MemorySessionStore();
     final client = CerqleClient(
       config: config,

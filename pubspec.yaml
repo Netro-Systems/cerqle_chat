@@ -1,7 +1,16 @@
 name: cerqle_chat
 description: A customizable Flutter SDK for adding Cerqle customer chat to mobile, web, and desktop apps.
-repository: https://github.com/Netro-Systems/cerqle_chat
+homepage: https://cerqle.ai
+repository: https://github.com/cerqle/cerqle_chat
+issue_tracker: https://github.com/cerqle/cerqle_chat/issues
 version: 0.1.0
+
+topics:
+  - chat
+  - customer-support
+  - livechat
+  - messaging
+  - sdk
 
 environment:
   sdk: ^3.5.0

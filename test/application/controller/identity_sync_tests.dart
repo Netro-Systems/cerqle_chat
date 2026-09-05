@@ -30,7 +30,8 @@ void registerIdentitySyncTests(CerqleConfig config) {
     await controller.updateUser(
       const CerqleUser(
         externalId: 'customer-1',
-        signature: '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
+        signature:
+            '0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef',
       ),
     );
 
@@ -214,9 +215,11 @@ void registerIdentitySyncTests(CerqleConfig config) {
     expect(store.reads, <String>[namespace, namespace]);
     expect(store.writes, <String>[namespace, namespace]);
     expect(headers, <String?>[null, 'token-1']);
-    expect(bodies.first, <String, dynamic>{'key': 'test-widget'});
+    expect(
+        bodies.first, <String, dynamic>{'key': 'test-widget', 'active': true});
     expect(bodies.last, <String, dynamic>{
       'key': 'test-widget',
+      'active': true,
       'visitor_id': 'visitor-1',
     });
 
@@ -361,7 +364,8 @@ void registerIdentitySyncTests(CerqleConfig config) {
       }
       pollCalls++;
       activePolls++;
-      maximumActivePolls = activePolls > maximumActivePolls ? activePolls : maximumActivePolls;
+      maximumActivePolls =
+          activePolls > maximumActivePolls ? activePolls : maximumActivePolls;
       await releasePoll.future;
       activePolls--;
       return http.Response(jsonEncode(pollResponse()), 200);

@@ -40,7 +40,8 @@ void registerPreChatLifecycleTests(CerqleConfig config) {
     await client.close();
   });
 
-  test('pre-chat validates required fields and rejects unknown requirements', () async {
+  test('pre-chat validates required fields and rejects unknown requirements',
+      () async {
     var unknownField = false;
     final httpClient = MockClient((_) async {
       final response = sessionResponse(requirePreChat: true);
@@ -92,7 +93,8 @@ void registerPreChatLifecycleTests(CerqleConfig config) {
     await unknownClient.close();
   });
 
-  test('pre-chat skips when user data or stored completion satisfies fields', () async {
+  test('pre-chat skips when user data or stored completion satisfies fields',
+      () async {
     final userStore = MemorySessionStore();
     final userConfig = CerqleConfig(
       widgetKey: config.widgetKey,

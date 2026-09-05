@@ -26,10 +26,12 @@ class CerqleClient {
     _sessions = _SessionCoordinator(
       config: config,
       remoteDataSource: _remoteDataSource,
-      sessionStore: sessionStore ?? FlutterSecureCerqleSessionStore(),
+      sessionStore: sessionStore ??
+          config.sessionStore ??
+          FlutterSecureCerqleSessionStore(),
     );
-    _realtimeConnector =
-        realtimeConnector ?? PusherWidgetRealtimeConnector(httpClient: _httpClient);
+    _realtimeConnector = realtimeConnector ??
+        PusherWidgetRealtimeConnector(httpClient: _httpClient);
   }
 
   /// Immutable configuration used for every operation.

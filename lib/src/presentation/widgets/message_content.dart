@@ -14,8 +14,9 @@ class _MessageContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor =
-        message.role == CerqleMessageRole.visitor ? colors.onVisitorBubble : colors.onAgentBubble;
+    final textColor = message.role == CerqleMessageRole.visitor
+        ? colors.onVisitorBubble
+        : colors.onAgentBubble;
     final attachment = message.attachment;
     final localUpload = message.localUpload;
     final hasMedia = attachment != null || localUpload != null;
@@ -36,7 +37,9 @@ class _MessageContent extends StatelessWidget {
               url: attachment?.url,
             ));
 
-    final isFile = (message.type == CerqleMessageType.file || (!isImage && !isAudio)) && hasMedia;
+    final isFile =
+        (message.type == CerqleMessageType.file || (!isImage && !isAudio)) &&
+            hasMedia;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,7 +75,10 @@ class _MessageContent extends StatelessWidget {
         if (_visibleMessageBody(message).isNotEmpty)
           SelectableText(
             _visibleMessageBody(message),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: textColor, height: 1.4),
+            style: Theme.of(context)
+                .textTheme
+                .bodyMedium
+                ?.copyWith(color: textColor, height: 1.4),
           ),
       ],
     );
@@ -143,7 +149,8 @@ class _ImageAttachmentPreview extends StatelessWidget {
                         ),
                         fit: BoxFit.cover,
                         semanticLabel: localUpload!.filename,
-                        errorBuilder: (context, error, stackTrace) => _imageError(theme, filename),
+                        errorBuilder: (context, error, stackTrace) =>
+                            _imageError(theme, filename),
                       )
                     : attachment != null
                         ? Image.network(
@@ -152,7 +159,8 @@ class _ImageAttachmentPreview extends StatelessWidget {
                               'cerqle-remote-image-preview',
                             ),
                             fit: BoxFit.cover,
-                            semanticLabel: attachment!.filename ?? 'Image attachment',
+                            semanticLabel:
+                                attachment!.filename ?? 'Image attachment',
                             loadingBuilder: (context, child, loadingProgress) {
                               if (loadingProgress == null) return child;
                               return Container(
@@ -195,7 +203,9 @@ class _ImageAttachmentPreview extends StatelessWidget {
                     ),
                   ),
                 ),
-              if (!isPending && !isFailed && (attachment != null || localUpload != null))
+              if (!isPending &&
+                  !isFailed &&
+                  (attachment != null || localUpload != null))
                 Positioned(
                   top: 6,
                   right: 6,
@@ -320,7 +330,8 @@ class _ImageViewerScreen extends StatelessWidget {
                       upload!.bytes,
                       width: constraints.maxWidth,
                       fit: BoxFit.fitWidth,
-                      errorBuilder: (context, error, stackTrace) => _viewerError(constraints),
+                      errorBuilder: (context, error, stackTrace) =>
+                          _viewerError(constraints),
                     )
                   : attachment != null
                       ? Image.network(
@@ -339,7 +350,8 @@ class _ImageViewerScreen extends StatelessWidget {
                               ),
                             );
                           },
-                          errorBuilder: (context, error, stackTrace) => _viewerError(constraints),
+                          errorBuilder: (context, error, stackTrace) =>
+                              _viewerError(constraints),
                         )
                       : _viewerError(constraints),
             ),
@@ -377,14 +389,16 @@ class _AudioAttachmentPlayer extends StatefulWidget {
   final CerqleUpload? localUpload;
   final CerqleResolvedTheme colors;
   final bool visitor;
-  final Future<Uint8List> Function(CerqleAttachment attachment) loadAttachmentBytes;
+  final Future<Uint8List> Function(CerqleAttachment attachment)
+      loadAttachmentBytes;
 
   @override
   State<_AudioAttachmentPlayer> createState() => _AudioAttachmentPlayerState();
 }
 
 class _AudioAttachmentPlayerState extends State<_AudioAttachmentPlayer> {
-  static final Map<Uri, Future<Uint8List>> _downloadCache = <Uri, Future<Uint8List>>{};
+  static final Map<Uri, Future<Uint8List>> _downloadCache =
+      <Uri, Future<Uint8List>>{};
 
   late final AudioPlayer _player;
   late final StreamSubscription<PlayerState> _playerStateSubscription;
@@ -503,7 +517,9 @@ class _AudioAttachmentPlayerState extends State<_AudioAttachmentPlayer> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final foreground = widget.visitor ? widget.colors.onVisitorBubble : widget.colors.onAgentBubble;
+    final foreground = widget.visitor
+        ? widget.colors.onVisitorBubble
+        : widget.colors.onAgentBubble;
     final muted = foreground.withValues(alpha: 0.72);
     final trackColor = foreground.withValues(alpha: 0.18);
     final accent = widget.visitor ? foreground : widget.colors.primary;
@@ -562,7 +578,8 @@ class _AudioAttachmentPlayerState extends State<_AudioAttachmentPlayer> {
                 height: 40,
                 width: 40,
                 child: IconButton.filled(
-                  tooltip: playing ? 'Pause voice message' : 'Play voice message',
+                  tooltip:
+                      playing ? 'Pause voice message' : 'Play voice message',
                   onPressed: loading ? null : _togglePlayback,
                   iconSize: 20,
                   padding: EdgeInsets.zero,
@@ -579,7 +596,9 @@ class _AudioAttachmentPlayerState extends State<_AudioAttachmentPlayer> {
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
                       : Icon(
-                          playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                          playing
+                              ? Icons.pause_rounded
+                              : Icons.play_arrow_rounded,
                         ),
                 ),
               ),
@@ -600,7 +619,9 @@ class _AudioAttachmentPlayerState extends State<_AudioAttachmentPlayer> {
                           duration: duration,
                           activeColor: accent,
                           inactiveColor: trackColor,
-                          onSeek: loading || duration == Duration.zero ? null : _player.seek,
+                          onSeek: loading || duration == Duration.zero
+                              ? null
+                              : _player.seek,
                         ),
                         const SizedBox(height: 6),
                         Row(
@@ -613,7 +634,9 @@ class _AudioAttachmentPlayerState extends State<_AudioAttachmentPlayer> {
                               ),
                             ),
                             Text(
-                              duration == Duration.zero ? '--:--' : _duration(duration),
+                              duration == Duration.zero
+                                  ? '--:--'
+                                  : _duration(duration),
                               style: theme.textTheme.labelSmall?.copyWith(
                                 color: muted,
                               ),
@@ -632,9 +655,10 @@ class _AudioAttachmentPlayerState extends State<_AudioAttachmentPlayer> {
     );
   }
 
-  Key? get _localPreviewKey => widget.localUpload != null && widget.attachment == null
-      ? const ValueKey<String>('cerqle-local-audio-preview')
-      : null;
+  Key? get _localPreviewKey =>
+      widget.localUpload != null && widget.attachment == null
+          ? const ValueKey<String>('cerqle-local-audio-preview')
+          : null;
 }
 
 class _AudioSourceBytes {
@@ -684,11 +708,14 @@ List<String> _candidateLocalAudioContentTypes(CerqleUpload upload) {
 
 bool _validAudioMimeType(String? value) {
   final normalized = value?.trim().toLowerCase();
-  return normalized != null && normalized.isNotEmpty && normalized.startsWith('audio/');
+  return normalized != null &&
+      normalized.isNotEmpty &&
+      normalized.startsWith('audio/');
 }
 
 String? _inferAudioMimeType(String? filenameOrPath) {
-  final ext = (filenameOrPath ?? '').split('?').first.split('.').last.toLowerCase();
+  final ext =
+      (filenameOrPath ?? '').split('?').first.split('.').last.toLowerCase();
   return switch (ext) {
     'mp3' => 'audio/mpeg',
     'm4a' => 'audio/mp4',
@@ -740,8 +767,10 @@ class _AudioProgressBar extends StatelessWidget {
 
         return GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTapDown: onSeek == null ? null : (details) => seek(details.globalPosition),
-          onHorizontalDragUpdate: onSeek == null ? null : (details) => seek(details.globalPosition),
+          onTapDown:
+              onSeek == null ? null : (details) => seek(details.globalPosition),
+          onHorizontalDragUpdate:
+              onSeek == null ? null : (details) => seek(details.globalPosition),
           child: SizedBox(
             height: 18,
             child: Align(
@@ -798,7 +827,8 @@ class _FileAttachmentBubbleState extends State<_FileAttachmentBubble> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isVisitor = widget.message.role == CerqleMessageRole.visitor;
-    final textColor = isVisitor ? widget.colors.onVisitorBubble : widget.colors.onAgentBubble;
+    final textColor =
+        isVisitor ? widget.colors.onVisitorBubble : widget.colors.onAgentBubble;
     final muted = textColor.withValues(alpha: 0.72);
     final surface = textColor.withValues(alpha: isVisitor ? 0.13 : 0.06);
     final failed = widget.message.status == CerqleMessageStatus.failed ||
@@ -808,11 +838,15 @@ class _FileAttachmentBubbleState extends State<_FileAttachmentBubble> {
     final ext = _documentExtension(filename);
     final (icon, badgeColor) = _documentIconAndColor(ext);
     final iconColor = isVisitor ? Colors.white : badgeColor;
-    final iconBackground =
-        isVisitor ? Colors.white.withValues(alpha: 0.22) : badgeColor.withValues(alpha: 0.15);
-    final displayName = filename.toUpperCase().endsWith('($ext)') ? filename : '$filename ($ext)';
+    final iconBackground = isVisitor
+        ? Colors.white.withValues(alpha: 0.22)
+        : badgeColor.withValues(alpha: 0.15);
+    final displayName = filename.toUpperCase().endsWith('($ext)')
+        ? filename
+        : '$filename ($ext)';
     final sizeBytes = widget.message.localUpload?.bytes.length;
-    final hasSource = widget.message.attachment?.url != null || widget.message.localUpload != null;
+    final hasSource = widget.message.attachment?.url != null ||
+        widget.message.localUpload != null;
 
     return Semantics(
       button: hasSource,
@@ -823,7 +857,8 @@ class _FileAttachmentBubbleState extends State<_FileAttachmentBubble> {
           borderRadius: BorderRadius.circular(10),
           onTap: hasSource && !_isOpening ? _handleOpen : null,
           child: Container(
-            key: widget.message.localUpload != null && widget.message.attachment == null
+            key: widget.message.localUpload != null &&
+                    widget.message.attachment == null
                 ? const ValueKey<String>('cerqle-local-file-preview')
                 : null,
             constraints: const BoxConstraints(maxWidth: 280),
@@ -872,7 +907,8 @@ class _FileAttachmentBubbleState extends State<_FileAttachmentBubble> {
                         style: theme.textTheme.bodySmall?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: textColor,
-                          decoration: hasSource ? TextDecoration.underline : null,
+                          decoration:
+                              hasSource ? TextDecoration.underline : null,
                           decorationColor: textColor.withValues(alpha: 0.45),
                         ),
                       ),
@@ -1066,7 +1102,8 @@ Future<void> _downloadAttachmentToDevice(
         final tempFile = File('${cerqleTemp.path}/$filename');
         await tempFile.writeAsBytes(bytes);
         savedPath = tempFile.path;
-        await launchUrl(Uri.file(tempFile.path), mode: LaunchMode.platformDefault);
+        await launchUrl(Uri.file(tempFile.path),
+            mode: LaunchMode.platformDefault);
       } catch (_) {}
     }
 
@@ -1115,7 +1152,9 @@ String _duration(Duration value) {
 }
 
 String _resolveDocumentFilename(CerqleMessage message) {
-  var name = message.attachment?.filename?.trim() ?? message.localUpload?.filename.trim() ?? '';
+  var name = message.attachment?.filename?.trim() ??
+      message.localUpload?.filename.trim() ??
+      '';
   if (name.isEmpty && message.attachment?.url != null) {
     final segments = message.attachment!.url.pathSegments;
     if (segments.isNotEmpty && segments.last.contains('.')) {
@@ -1156,7 +1195,8 @@ String _visibleMessageBody(CerqleMessage message) {
     );
     return filenamePattern.hasMatch(body) ? '' : body;
   }
-  if (message.type == CerqleMessageType.file || (attachment != null || localUpload != null)) {
+  if (message.type == CerqleMessageType.file ||
+      (attachment != null || localUpload != null)) {
     if (body.isEmpty ||
         body == filename ||
         body.toLowerCase() == 'document attachment' ||
