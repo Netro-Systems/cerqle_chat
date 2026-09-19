@@ -96,7 +96,7 @@ void _registerResponseContractTests() {
       }
     });
 
-    test('rejects absent authoritative session and poll state', () async {
+    test('rejects absent authoritative session and refresh state', () async {
       final malformedSession = sessionResponse()..remove('handoff');
       final sessionApi = _remoteDataSource(
         baseUrl: Uri.parse('https://chat.example.com'),
@@ -119,15 +119,15 @@ void _registerResponseContractTests() {
         ),
       );
 
-      final malformedPoll = pollResponse()..remove('messages');
-      final pollApi = _remoteDataSource(
+      final malformedRefresh = refreshResponse()..remove('messages');
+      final refreshApi = _remoteDataSource(
         baseUrl: Uri.parse('https://chat.example.com'),
         httpClient: _RecordingClient(
-          (_) async => _jsonResponse(malformedPoll),
+          (_) async => _jsonResponse(malformedRefresh),
         ),
       );
       await expectLater(
-        pollApi.poll(
+        refreshApi.refresh(
           widgetKey: 'test-widget',
           token: 'token-1',
           after: 0,
@@ -142,12 +142,12 @@ void _registerResponseContractTests() {
       );
     });
 
-    test('keeps unknown message enums safe and parses poll state', () async {
+    test('keeps unknown message enums safe and parses refresh state', () async {
       final api = _remoteDataSource(
         baseUrl: Uri.parse('https://chat.example.com'),
         httpClient: _RecordingClient(
           (_) async => _jsonResponse(<String, Object?>{
-            ...pollResponse(),
+            ...refreshResponse(),
             'online': false,
             'agent_typing': <String, Object?>{
               'is_typing': true,
@@ -171,7 +171,7 @@ void _registerResponseContractTests() {
         ),
       );
 
-      final result = await api.poll(
+      final result = await api.refresh(
         widgetKey: 'test-widget',
         token: 'token-1',
         after: 0,
@@ -237,7 +237,7 @@ void _registerResponseContractTests() {
       );
 
       await expectLater(
-        authenticatedApi.poll(
+        authenticatedApi.refresh(
           widgetKey: 'test-widget',
           token: 'token-1',
           after: 0,
@@ -253,7 +253,7 @@ void _registerResponseContractTests() {
         ),
       );
       await expectLater(
-        authenticatedApi.poll(
+        authenticatedApi.refresh(
           widgetKey: 'test-widget',
           token: 'token-1',
           after: 1,

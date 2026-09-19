@@ -54,6 +54,7 @@ void main() {
     expect(find.text('Camera'), findsOneWidget);
     expect(find.text('Gallery'), findsOneWidget);
     expect(find.text('Audio'), findsOneWidget);
+    expect(find.byType(Image), findsNWidgets(4));
   });
 
   testWidgets('hides Document item when showDocument is false', (tester) async {

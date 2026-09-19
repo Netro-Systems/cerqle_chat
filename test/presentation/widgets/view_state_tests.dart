@@ -179,6 +179,13 @@ void registerViewStateTests(CerqleConfig config) {
     expect(
         supportLogoAsset.assetName, 'assets/images/cerqle-icon-purple-bg.svg');
     expect(supportLogoAsset.packageName, 'cerqle_chat');
+    expect(supportLogo.fit, BoxFit.cover);
+    expect(
+      tester.getSize(
+        find.byKey(const ValueKey<String>('cerqle-support-logo')).first,
+      ),
+      const Size.square(32),
+    );
     expect(find.bySemanticsLabel('Send message'), findsOneWidget);
     expect(
       find.widgetWithText(TextField, 'Type your message…'),
@@ -334,7 +341,7 @@ void registerViewStateTests(CerqleConfig config) {
             200,
           );
         }
-        return http.Response(jsonEncode(pollResponse()), 200);
+        return http.Response(jsonEncode(refreshResponse()), 200);
       }),
     );
 
@@ -362,7 +369,6 @@ void registerViewStateTests(CerqleConfig config) {
       widgetKey: config.widgetKey,
       apiBaseUrl: config.apiBaseUrl,
       enableOneSignal: false,
-      polling: config.polling,
       mediaAdapter: mediaAdapter,
     );
     final runtime = _runtime(
@@ -378,7 +384,7 @@ void registerViewStateTests(CerqleConfig config) {
             request.url.path.endsWith('/messages')) {
           return sendResponse.future;
         }
-        return http.Response(jsonEncode(pollResponse()), 200);
+        return http.Response(jsonEncode(refreshResponse()), 200);
       }),
     );
 
@@ -453,7 +459,6 @@ void registerViewStateTests(CerqleConfig config) {
       widgetKey: config.widgetKey,
       apiBaseUrl: config.apiBaseUrl,
       enableOneSignal: false,
-      polling: config.polling,
       mediaAdapter: mediaAdapter,
     );
     final runtime = _runtime(
@@ -469,7 +474,7 @@ void registerViewStateTests(CerqleConfig config) {
             request.url.path.endsWith('/messages')) {
           throw http.ClientException('connection dropped after upload');
         }
-        return http.Response(jsonEncode(pollResponse()), 200);
+        return http.Response(jsonEncode(refreshResponse()), 200);
       }),
     );
 
@@ -511,7 +516,6 @@ void registerViewStateTests(CerqleConfig config) {
       widgetKey: config.widgetKey,
       apiBaseUrl: config.apiBaseUrl,
       enableOneSignal: false,
-      polling: config.polling,
       mediaAdapter: mediaAdapter,
     );
     final runtime = _runtime(
@@ -527,7 +531,7 @@ void registerViewStateTests(CerqleConfig config) {
             request.url.path.endsWith('/messages')) {
           return sendResponse.future;
         }
-        return http.Response(jsonEncode(pollResponse()), 200);
+        return http.Response(jsonEncode(refreshResponse()), 200);
       }),
     );
 

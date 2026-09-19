@@ -1,6 +1,138 @@
 part of 'chat_widgets_test.dart';
 
 void registerPresentationLayoutTests(CerqleConfig config) {
+  testWidgets('full-screen chat can use light status-bar icons',
+      (tester) async {
+    const lightStatusConfig = CerqleConfig(
+      widgetKey: 'test-widget',
+      apiBaseUrl: 'https://chat.example.com',
+      enableOneSignal: false,
+      lightStatusBarIcons: true,
+    );
+    final runtime = _runtime(
+      lightStatusConfig,
+      MockClient(
+        (_) async => http.Response(jsonEncode(sessionResponse()), 200),
+      ),
+    );
+
+    await tester.pumpWidget(_app(CerqleChatScreen(
+      config: lightStatusConfig,
+      controller: runtime.controller,
+    )));
+    await tester.pump();
+
+    final overlay = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+      find
+          .descendant(
+            of: find.byType(CerqleChatScreen),
+            matching: find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+          )
+          .first,
+    );
+    expect(overlay.value.statusBarIconBrightness, Brightness.light);
+    expect(overlay.value.statusBarBrightness, Brightness.dark);
+    expect(overlay.value.statusBarColor, Colors.transparent);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
+  testWidgets('full-screen chat defaults to dark status-bar icons',
+      (tester) async {
+    final runtime = _runtime(
+      config,
+      MockClient(
+        (_) async => http.Response(jsonEncode(sessionResponse()), 200),
+      ),
+    );
+
+    await tester.pumpWidget(_app(CerqleChatScreen(
+      config: config,
+      controller: runtime.controller,
+    )));
+    await tester.pump();
+
+    final overlay = tester.widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+      find
+          .descendant(
+            of: find.byType(CerqleChatScreen),
+            matching: find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+          )
+          .first,
+    );
+    expect(overlay.value.statusBarIconBrightness, Brightness.dark);
+    expect(overlay.value.statusBarBrightness, Brightness.light);
+    expect(overlay.value.statusBarColor, Colors.transparent);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
+  testWidgets('composer shares a row and expands on focus', (tester) async {
+    tester.view.physicalSize = const Size(400, 800);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    final runtime = _runtime(
+      config,
+      MockClient(
+        (_) async => http.Response(jsonEncode(sessionResponse()), 200),
+      ),
+    );
+    await tester.pumpWidget(
+      _app(
+        CerqleChatView(
+          config: config,
+          controller: runtime.controller,
+        ),
+      ),
+    );
+    await tester.pump();
+    await tester.pump();
+
+    final field = find.byType(TextField);
+    final attachment = find.byTooltip('Attach file');
+    final send = find.byTooltip('Send message');
+    final compactSize = tester.getSize(field);
+    expect(compactSize.height, closeTo(42, 1));
+    expect(tester.getSize(send).height, 42);
+    final sendTargets =
+        find.ancestor(of: send, matching: find.byType(SizedBox));
+    expect(
+      sendTargets.evaluate().any(
+            (element) =>
+                element.renderObject is RenderBox &&
+                (element.renderObject! as RenderBox).size ==
+                    const Size.square(48),
+          ),
+      isTrue,
+    );
+    expect(tester.getCenter(attachment).dy,
+        closeTo(tester.getCenter(field).dy, 1));
+    expect(tester.getCenter(send).dy, closeTo(tester.getCenter(field).dy, 3));
+
+    await tester.tap(field);
+    await tester.pumpAndSettle();
+    expect(tester.getSize(field).width, greaterThan(compactSize.width));
+    expect(tester.getSize(field).height, closeTo(compactSize.height, 1));
+    await tester.enterText(field, 'First line\nSecond line\nThird line');
+    await tester.pumpAndSettle();
+    expect(tester.getSize(field).height, greaterThan(compactSize.height));
+    expect(tester.takeException(), isNull);
+
+    final focusNode = tester.widget<TextField>(field).focusNode!;
+    focusNode.unfocus();
+    await tester.pumpAndSettle();
+    expect(tester.getSize(field).width, closeTo(compactSize.width, 1));
+    expect(
+      tester.widget<TextField>(field).controller!.text,
+      'First line\nSecond line\nThird line',
+    );
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
   testWidgets('full-screen integration renders a title and embedded body',
       (tester) async {
     final runtime = _runtime(
@@ -37,11 +169,6 @@ void registerPresentationLayoutTests(CerqleConfig config) {
       apiBaseUrl: 'https://chat.example.com',
       useApiColors: false,
       enableOneSignal: false,
-      polling: CerqlePollingConfig(
-        visibleInterval: Duration(minutes: 1),
-        idleInterval: Duration(minutes: 1),
-        failureMaxInterval: Duration(minutes: 1),
-      ),
     );
     final runtime = _runtime(
       brandConfig,
@@ -93,11 +220,6 @@ void registerPresentationLayoutTests(CerqleConfig config) {
       useApiColors: false,
       enableOneSignal: false,
       theme: CerqleThemeData(primaryColor: Color(0xFF087F5B)),
-      polling: CerqlePollingConfig(
-        visibleInterval: Duration(minutes: 1),
-        idleInterval: Duration(minutes: 1),
-        failureMaxInterval: Duration(minutes: 1),
-      ),
     );
     final runtime = _runtime(
       themedConfig,

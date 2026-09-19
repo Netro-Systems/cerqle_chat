@@ -30,6 +30,8 @@ final class WidgetOneSignalService {
   bool _initialized = false;
   String? _initializedAppId;
   String? _loggedInExternalId;
+  Future<bool>? _permissionRequest;
+  bool? _permissionGranted;
 
   /// Stream of data payloads from tapped push notifications.
   Stream<Map<String, dynamic>> get notificationClicks =>
@@ -70,11 +72,41 @@ final class WidgetOneSignalService {
 
   /// Requests push notification permission and opts in to push subscription.
   Future<void> requestPermission() async {
-    if (!_initialized) return;
+    await _ensureNotificationPermission();
+  }
+
+  Future<bool> _ensureNotificationPermission() {
+    if (!_initialized) return Future<bool>.value(false);
+    final granted = _permissionGranted;
+    if (granted != null) return Future<bool>.value(granted);
+    final active = _permissionRequest;
+    if (active != null) return active;
+
+    final request = _requestNotificationPermission();
+    _permissionRequest = request;
+    return request.whenComplete(() {
+      if (identical(_permissionRequest, request)) {
+        _permissionRequest = null;
+      }
+    });
+  }
+
+  Future<bool> _requestNotificationPermission() async {
     try {
+      // Do not show OneSignal's fallback dialog directing users to Settings
+      // after they have already denied notification permission.
+      final granted = await OneSignal.Notifications.requestPermission(false);
+      if (!granted) {
+        _permissionGranted = false;
+        return false;
+      }
       await OneSignal.User.pushSubscription.optIn();
-      await OneSignal.Notifications.requestPermission(true);
-    } catch (_) {}
+      _permissionGranted = true;
+      return true;
+    } catch (_) {
+      _permissionGranted = false;
+      return false;
+    }
   }
 
   /// Links a verified user external ID to OneSignal.
@@ -103,10 +135,16 @@ final class WidgetOneSignalService {
     if (!_initialized) return null;
 
     if (ensureReady) {
-      await requestPermission();
+      final granted = await _ensureNotificationPermission();
+      if (!granted) return null;
     }
 
     try {
+      if (!ensureReady) {
+        final subscriptionId = OneSignal.User.pushSubscription.id;
+        return subscriptionId?.isNotEmpty == true ? subscriptionId : null;
+      }
+
       for (var attempt = 1; attempt <= 15; attempt++) {
         final subscriptionId = OneSignal.User.pushSubscription.id;
         if (subscriptionId != null && subscriptionId.isNotEmpty) {
@@ -179,5 +217,7 @@ final class WidgetOneSignalService {
     _initialized = false;
     _initializedAppId = null;
     _loggedInExternalId = null;
+    _permissionRequest = null;
+    _permissionGranted = null;
   }
 }

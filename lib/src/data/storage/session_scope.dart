@@ -60,15 +60,6 @@ void validateCerqleConfig(CerqleConfig config) {
   }
   validateAndCanonicalizeBaseUrl(config.apiBaseUrl);
   _validateUser(config.user);
-  if (config.polling.visibleInterval <= Duration.zero ||
-      config.polling.idleInterval <= Duration.zero ||
-      config.polling.failureMaxInterval <= Duration.zero) {
-    throw const CerqleException(
-      code: CerqleErrorCode.configuration,
-      message: 'Polling intervals must be positive.',
-      retryable: false,
-    );
-  }
 }
 
 void _validateUser(CerqleUser? user) {

@@ -8,7 +8,6 @@ import '../domain/errors/cerqle_exception.dart';
 import '../domain/events/chat_event.dart';
 
 part '../diagnostics/diagnostic_event.dart';
-part 'polling_config.dart';
 part 'presentation_config.dart';
 part 'theme_data.dart';
 part 'user.dart';
@@ -27,10 +26,10 @@ class CerqleConfig {
     this.user,
     this.theme,
     this.useApiColors = true,
+    this.lightStatusBarIcons = false,
     this.presentation = CerqlePresentation.fullScreen,
     this.enableTyping = true,
     this.mediaAdapter,
-    this.polling = const CerqlePollingConfig(),
     this.diagnostics,
     this.oneSignalAppId = defaultOneSignalAppId,
     this.enableOneSignal = true,
@@ -56,6 +55,12 @@ class CerqleConfig {
   /// Whether server-provided colors participate in theme resolution.
   final bool useApiColors;
 
+  /// Whether full-screen chat uses light (white) status-bar icons and text.
+  ///
+  /// Enable this for dark or strongly colored chat headers. This setting does
+  /// not affect bottom-sheet, dialog, or embedded presentations.
+  final bool lightStatusBarIcons;
+
   /// Default presentation used by [CerqleChat.open].
   final CerqlePresentation presentation;
 
@@ -64,9 +69,6 @@ class CerqleConfig {
 
   /// Optional host bridge for image selection and audio recording.
   final CerqleMediaAdapter? mediaAdapter;
-
-  /// Foreground polling intervals.
-  final CerqlePollingConfig polling;
 
   /// Optional receiver for redacted operational diagnostics.
   final CerqleDiagnosticsCallback? diagnostics;

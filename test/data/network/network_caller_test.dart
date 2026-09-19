@@ -24,7 +24,7 @@ void main() {
       ApiEndpoints.messages,
       token: 'visitor-token',
       query: const <String, String>{'key': 'widget', 'after': '4'},
-      operation: WidgetOperation.poll,
+      operation: WidgetOperation.refresh,
     );
 
     expect(recorded.method, 'GET');
@@ -134,7 +134,7 @@ void main() {
       rateLimited.get(
         ApiEndpoints.messages,
         token: 'token',
-        operation: WidgetOperation.poll,
+        operation: WidgetOperation.refresh,
       ),
       throwsA(
         isA<CerqleException>()
@@ -163,7 +163,7 @@ void main() {
       timedOut.get(
         ApiEndpoints.messages,
         token: 'token',
-        operation: WidgetOperation.poll,
+        operation: WidgetOperation.refresh,
       ),
       throwsA(
         isA<CerqleException>().having(
@@ -184,7 +184,7 @@ void main() {
       disconnected.get(
         ApiEndpoints.messages,
         token: 'token',
-        operation: WidgetOperation.poll,
+        operation: WidgetOperation.refresh,
       ),
       throwsA(
         isA<CerqleException>().having(

@@ -7,7 +7,7 @@ import '../../domain/errors/cerqle_exception.dart';
 /// Widget operation categories whose HTTP semantics differ by endpoint.
 enum WidgetOperation {
   session,
-  poll,
+  refresh,
   sendText,
   sendMedia,
   media,

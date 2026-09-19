@@ -88,7 +88,11 @@ class _ChatHeader extends StatelessWidget {
                   tooltip: 'Close chat',
                   onPressed: onClose,
                   color: colors.onPrimary,
-                  icon: const Icon(Icons.close_rounded, size: 20),
+                  icon: _ComposerAssetIcon(
+                    assetName: 'assets/icons/remove.png',
+                    color: colors.onPrimary,
+                    size: 26,
+                  ),
                 ),
             ],
           ),

@@ -105,11 +105,13 @@ final class _SessionCoordinator {
       user: user,
       theme: config.theme,
       useApiColors: config.useApiColors,
+      lightStatusBarIcons: config.lightStatusBarIcons,
       presentation: config.presentation,
       enableTyping: config.enableTyping,
       mediaAdapter: config.mediaAdapter,
-      polling: config.polling,
       diagnostics: config.diagnostics,
+      oneSignalAppId: config.oneSignalAppId,
+      enableOneSignal: config.enableOneSignal,
     );
     validateCerqleConfig(candidate);
 

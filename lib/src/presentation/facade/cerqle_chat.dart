@@ -83,7 +83,7 @@ abstract final class CerqleChat {
     _onNotificationTapped = callback;
   }
 
-  /// Opens the chatbox from a notification click and ensures the thread is refreshed.
+  /// Opens the chatbox from a notification click.
   static Future<CerqleChatResult?> openChatboxFromNotification({
     BuildContext? context,
     CerqleConfig? config,
@@ -104,12 +104,6 @@ abstract final class CerqleChat {
         message: 'No BuildContext or navigatorKey available to open chat.',
         retryable: false,
       );
-    }
-
-    final scope = cerqlePresentationScope(effectiveConfig);
-    final existingController = _ownedControllers[scope];
-    if (existingController != null) {
-      unawaited(existingController.refresh().catchError((_) {}));
     }
 
     return open(effectiveContext, config: effectiveConfig);

@@ -106,7 +106,7 @@ void main() {
     expect(emailScope, isNot(contains('customer@example.com')));
   });
 
-  test('configuration rejects unsafe identity and polling values', () {
+  test('configuration rejects unsafe identity values', () {
     expect(
       () => CerqleClient(
         config: const CerqleConfig(widgetKey: ''),
@@ -118,15 +118,6 @@ void main() {
         config: const CerqleConfig(
           widgetKey: 'key',
           user: CerqleUser(externalId: ' padded '),
-        ),
-      ),
-      throwsA(isA<CerqleException>()),
-    );
-    expect(
-      () => CerqleClient(
-        config: const CerqleConfig(
-          widgetKey: 'key',
-          polling: CerqlePollingConfig(visibleInterval: Duration.zero),
         ),
       ),
       throwsA(isA<CerqleException>()),

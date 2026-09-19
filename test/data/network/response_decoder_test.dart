@@ -33,7 +33,7 @@ void main() {
     const secret = 'private-message-body';
 
     expect(
-      () => decoder.poll(http.Response('{"secret":"$secret"}', 200)),
+      () => decoder.refresh(http.Response('{"secret":"$secret"}', 200)),
       throwsA(
         isA<CerqleException>()
             .having((error) => error.code, 'code', CerqleErrorCode.server)

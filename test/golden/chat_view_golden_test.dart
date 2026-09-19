@@ -16,11 +16,6 @@ void main() {
     widgetKey: 'test-widget',
     apiBaseUrl: 'https://chat.example.com',
     enableOneSignal: false,
-    polling: CerqlePollingConfig(
-      visibleInterval: Duration(minutes: 1),
-      idleInterval: Duration(minutes: 1),
-      failureMaxInterval: Duration(minutes: 1),
-    ),
   );
 
   setUp(() {
@@ -78,6 +73,7 @@ void main() {
     ));
     await tester.pump();
     await tester.pump();
+    await _settleChatIcons(tester);
 
     await expectLater(
       find.byType(CerqleChatView),
@@ -142,6 +138,7 @@ void main() {
     ));
     await tester.pump();
     await tester.pump();
+    await _settleChatIcons(tester);
 
     await expectLater(
       find.byType(CerqleChatView),
@@ -170,6 +167,7 @@ void main() {
     await tester.pump();
     await runtime.controller.refresh().catchError((_) {});
     await tester.pump();
+    await _settleChatIcons(tester);
 
     await expectLater(
       find.byType(CerqleChatView),
@@ -209,7 +207,7 @@ void main() {
     final mediaConfig = CerqleConfig(
       widgetKey: config.widgetKey,
       apiBaseUrl: config.apiBaseUrl,
-      polling: config.polling,
+      enableOneSignal: false,
       mediaAdapter: const _GoldenMediaAdapter(),
     );
     final runtime = _Runtime(
@@ -220,7 +218,8 @@ void main() {
       CerqleChatView(config: mediaConfig, controller: runtime.controller),
     ));
     await tester.pump();
-    await tester.pump();
+    await tester.pumpAndSettle();
+    await _settleChatIcons(tester);
 
     await expectLater(
       find.byType(CerqleChatView),
@@ -246,6 +245,7 @@ void main() {
     ));
     await tester.pump();
     await tester.pump();
+    await _settleChatIcons(tester);
 
     await expectLater(
       find.byType(CerqleChatView),
@@ -271,6 +271,36 @@ Widget _goldenApp(
       ),
       home: Scaffold(body: child),
     );
+
+Future<void> _settleChatIcons(WidgetTester tester) async {
+  final context = tester.element(find.byType(CerqleChatView));
+  await tester.runAsync(() async {
+    await Future.wait(<Future<void>>[
+      precacheImage(
+        const AssetImage(
+          'assets/icons/attachment.png',
+          package: 'cerqle_chat',
+        ),
+        context,
+      ),
+      precacheImage(
+        const AssetImage(
+          'assets/icons/microphone.png',
+          package: 'cerqle_chat',
+        ),
+        context,
+      ),
+      precacheImage(
+        const AssetImage(
+          'assets/icons/sent-fast.png',
+          package: 'cerqle_chat',
+        ),
+        context,
+      ),
+    ]);
+  });
+  await tester.pumpAndSettle();
+}
 
 final class _GoldenMediaAdapter implements CerqleMediaAdapter {
   const _GoldenMediaAdapter();

@@ -44,8 +44,8 @@ final class WidgetResponseDecoder {
     );
   }
 
-  /// Decodes one forward-poll response.
-  WidgetPollResult poll(http.Response response) {
+  /// Decodes one bounded conversation refresh page.
+  WidgetRefreshResult refresh(http.Response response) {
     final json = _decodeObject(response);
     if (json['messages'] is! List<dynamic>) throw _invalidResponse();
     final typing = json['agent_typing'];
@@ -54,7 +54,7 @@ final class WidgetResponseDecoder {
     final typingName = typing is Map<String, dynamic> ? typing['name'] : null;
     final handoffObj = json['handoff'] ?? json['handover'];
     if (handoffObj == null) throw _invalidResponse();
-    return WidgetPollResult(
+    return WidgetRefreshResult(
       messages: _parseMessages(json['messages']),
       supportAvailability: _parseAvailability(json['online'] == true),
       handoff: _parseHandoff(handoffObj),
