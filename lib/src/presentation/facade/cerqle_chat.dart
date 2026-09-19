@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'package:app_settings/app_settings.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import '../../application/services/widget_onesignal_service.dart';
@@ -202,6 +204,27 @@ abstract final class CerqleChat {
     required CerqleChatController? suppliedController,
     required CerqlePresentation presentation,
   }) async {
+    if (config.requireNotificationPermission &&
+        !kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.android ||
+            defaultTargetPlatform == TargetPlatform.iOS)) {
+      await WidgetOneSignalService.instance.initialize(
+        appId: config.oneSignalAppId,
+      );
+      final permission =
+          await WidgetOneSignalService.instance.requestPermissionForChatOpen();
+      if (permission == CerqleNotificationPermissionResult.cannotRequest &&
+          context.mounted) {
+        _showNotificationSettingsSnack(context);
+      }
+      if (permission != CerqleNotificationPermissionResult.granted) {
+        return null;
+      }
+    }
+    if (!context.mounted) {
+      return const CerqleChatResult(reason: CerqleChatCloseReason.userClosed);
+    }
+
     CerqleClient? ownedClient;
     final controller = suppliedController ??
         (() {
@@ -286,6 +309,33 @@ abstract final class CerqleChat {
         await ownedClient!.close();
       }
     }
+  }
+
+  static void _showNotificationSettingsSnack(BuildContext context) {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: const Text('Enable notifications in Settings.'),
+          // A fixed snack remains visible when CerqleChatLauncher is supplied
+          // as Scaffold.floatingActionButton. The launcher can occupy the
+          // slot's full layout bounds, which makes Flutter reject a floating
+          // snack as being off screen.
+          behavior: SnackBarBehavior.fixed,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Settings',
+            onPressed: () => unawaited(
+              AppSettings.openAppSettings(
+                type: AppSettingsType.notification,
+              ),
+            ),
+          ),
+        ),
+      );
   }
 
   /// Deletes credentials for [config] and resets any facade-owned controller.

@@ -112,6 +112,7 @@ final class _SessionCoordinator {
       diagnostics: config.diagnostics,
       oneSignalAppId: config.oneSignalAppId,
       enableOneSignal: config.enableOneSignal,
+      requireNotificationPermission: config.requireNotificationPermission,
     );
     validateCerqleConfig(candidate);
 

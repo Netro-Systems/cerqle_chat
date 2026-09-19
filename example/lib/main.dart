@@ -18,6 +18,7 @@ Future<void> main() async {
   final widgetKey = dotenv.get('CERQLE_WIDGET_KEY').trim();
   final config = CerqleConfig(
     widgetKey: widgetKey,
+    // requireNotificationPermission: true,
     lightStatusBarIcons: true,
     apiBaseUrl:
         dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://cerqle.ai',

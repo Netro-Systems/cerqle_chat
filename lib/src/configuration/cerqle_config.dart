@@ -33,6 +33,7 @@ class CerqleConfig {
     this.diagnostics,
     this.oneSignalAppId = defaultOneSignalAppId,
     this.enableOneSignal = true,
+    this.requireNotificationPermission = false,
     this.sessionStore,
   });
 
@@ -78,6 +79,15 @@ class CerqleConfig {
 
   /// Whether OneSignal push notification device registration is enabled.
   final bool enableOneSignal;
+
+  /// Whether notification permission is required to open a modal chat.
+  ///
+  /// A denied or cancelled request keeps the chat closed. When permission can
+  /// no longer be requested, the SDK shows a compact message with an action
+  /// that opens the app's notification settings.
+  /// This does not change the startup request made by
+  /// [CerqleChat.initializeNotificationHandlers].
+  final bool requireNotificationPermission;
 
   /// Optional session store override. Defaults to secure storage.
   final CerqleSessionStore? sessionStore;

@@ -4,6 +4,10 @@
 
 ### Added
 
+- Added opt-in `CerqleConfig.requireNotificationPermission` gating for modal
+  chat. Denied permission keeps chat closed, with an Android/iOS notification-
+  settings action when the native prompt is unavailable.
+
 - Added a compact, single-row message composer with focus-driven expansion and refreshed chat action icons.
 - Added configurable full-screen status-bar icon brightness.
 

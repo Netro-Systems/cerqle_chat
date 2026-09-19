@@ -13,6 +13,7 @@ void main() {
     expect(controller.config, same(config));
     expect(config.oneSignalAppId, CerqleConfig.defaultOneSignalAppId);
     expect(config.enableOneSignal, isTrue);
+    expect(config.requireNotificationPermission, isFalse);
     expect(WidgetOneSignalService.instance, isNotNull);
 
     controller.dispose();

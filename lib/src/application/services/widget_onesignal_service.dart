@@ -3,6 +3,12 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:onesignal_flutter/onesignal_flutter.dart';
 
+/// Result of checking notification permission when a visitor opens chat.
+enum CerqleNotificationPermissionResult {
+  granted,
+  cannotRequest,
+}
+
 /// Manages OneSignal device registration, identity, and push notification clicks.
 final class WidgetOneSignalService {
   WidgetOneSignalService();
@@ -31,6 +37,7 @@ final class WidgetOneSignalService {
   String? _initializedAppId;
   String? _loggedInExternalId;
   Future<bool>? _permissionRequest;
+  Future<CerqleNotificationPermissionResult>? _chatOpenPermissionRequest;
   bool? _permissionGranted;
 
   /// Stream of data payloads from tapped push notifications.
@@ -56,7 +63,7 @@ final class WidgetOneSignalService {
       if (kDebugMode) {
         OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
       }
-      OneSignal.initialize(appId);
+      await OneSignal.initialize(appId);
       OneSignal.Notifications.addClickListener(_onNotificationClick);
       OneSignal.Notifications.addForegroundWillDisplayListener(
         _onForegroundWillDisplay,
@@ -73,6 +80,60 @@ final class WidgetOneSignalService {
   /// Requests push notification permission and opts in to push subscription.
   Future<void> requestPermission() async {
     await _ensureNotificationPermission();
+  }
+
+  /// Checks live platform permission and requests it when the native prompt is
+  /// still available.
+  ///
+  /// Unlike [requestPermission], this deliberately does not trust the cached
+  /// startup result because the user may have changed permission in Settings.
+  Future<CerqleNotificationPermissionResult> requestPermissionForChatOpen() {
+    final active = _chatOpenPermissionRequest;
+    if (active != null) return active;
+
+    final request = _requestPermissionForChatOpen();
+    _chatOpenPermissionRequest = request;
+    return request.whenComplete(() {
+      if (identical(_chatOpenPermissionRequest, request)) {
+        _chatOpenPermissionRequest = null;
+      }
+    });
+  }
+
+  Future<CerqleNotificationPermissionResult>
+      _requestPermissionForChatOpen() async {
+    if (!_initialized) {
+      return CerqleNotificationPermissionResult.cannotRequest;
+    }
+
+    try {
+      if (OneSignal.Notifications.permission) {
+        await OneSignal.User.pushSubscription.optIn();
+        _permissionGranted = true;
+        return CerqleNotificationPermissionResult.granted;
+      }
+
+      if (!await OneSignal.Notifications.canRequest()) {
+        _permissionGranted = false;
+        return CerqleNotificationPermissionResult.cannotRequest;
+      }
+
+      final granted = await OneSignal.Notifications.requestPermission(false);
+      if (granted) {
+        await OneSignal.User.pushSubscription.optIn();
+        _permissionGranted = true;
+        return CerqleNotificationPermissionResult.granted;
+      }
+
+      _permissionGranted = false;
+      // OneSignal's Android canRequest value can remain true after the OS has
+      // exhausted its native prompts. A failed request is therefore treated as
+      // requiring Settings so the caller can always offer a recovery action.
+      return CerqleNotificationPermissionResult.cannotRequest;
+    } catch (_) {
+      _permissionGranted = false;
+      return CerqleNotificationPermissionResult.cannotRequest;
+    }
   }
 
   Future<bool> _ensureNotificationPermission() {
@@ -130,12 +191,17 @@ final class WidgetOneSignalService {
   }
 
   /// Resolves the current OneSignal Push Subscription ID with retries.
-  Future<String?> currentPushToken({bool ensureReady = true}) async {
+  Future<String?> currentPushToken({
+    bool ensureReady = true,
+    bool requestPermission = true,
+  }) async {
     if (_pushTokenOverride != null) return _pushTokenOverride;
     if (!_initialized) return null;
 
     if (ensureReady) {
-      final granted = await _ensureNotificationPermission();
+      final granted = requestPermission
+          ? await _ensureNotificationPermission()
+          : _permissionGranted == true || OneSignal.Notifications.permission;
       if (!granted) return null;
     }
 
@@ -218,6 +284,7 @@ final class WidgetOneSignalService {
     _initializedAppId = null;
     _loggedInExternalId = null;
     _permissionRequest = null;
+    _chatOpenPermissionRequest = null;
     _permissionGranted = null;
   }
 }

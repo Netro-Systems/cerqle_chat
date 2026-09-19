@@ -105,7 +105,12 @@ class CerqleChatController with WidgetsBindingObserver {
         if (activeExternalId != null && activeExternalId.isNotEmpty) {
           await _oneSignalService.login(activeExternalId);
         }
-        deviceId = await _oneSignalService.currentPushToken();
+        // Permission prompting on chat open is controlled by
+        // requireNotificationPermission in the presentation facade. Startup
+        // prompting remains controlled by initializeNotificationHandlers.
+        deviceId = await _oneSignalService.currentPushToken(
+          requestPermission: false,
+        );
       }
 
       final result = await _client._startSession(deviceId: deviceId);

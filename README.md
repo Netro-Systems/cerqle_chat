@@ -200,6 +200,7 @@ Future<void> runHeadlessChat(CerqleConfig config) async {
 | `diagnostics` | `CerqleDiagnosticsCallback?` | `null` | Callback receiving redacted operational metrics and lifecycle events. |
 | `oneSignalAppId` | `String` | `CerqleConfig.defaultOneSignalAppId` | OneSignal App ID used for push notification registration. |
 | `enableOneSignal` | `bool` | `true` | Whether device push notification tokens are registered on session start. |
+| `requireNotificationPermission` | `bool` | `false` | When true, notification permission is required to open a modal chat. Denial keeps chat closed; if the OS prompt is unavailable, a compact message links to notification settings. |
 | `sessionStore` | `CerqleSessionStore?` | `null` | Custom session store override (defaults to secure encrypted platform storage). |
 
 ---
@@ -269,6 +270,7 @@ Future<void> main() async {
   final config = CerqleConfig(
     widgetKey: 'YOUR_WIDGET_KEY',
     user: const CerqleUser(name: 'Demo User', email: 'user@demo.com'),
+    requireNotificationPermission: true,
   );
 
   CerqleChat.initializeNotificationHandlers(
