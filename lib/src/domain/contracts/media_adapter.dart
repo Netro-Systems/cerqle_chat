@@ -1,23 +1,24 @@
 import '../models/models.dart';
 
-/// Host-supplied bridge for the optional platform UI used by the default
-/// composer to choose images and record microphone audio.
+/// Override for the platform media behavior used by the default composer.
 ///
-/// The SDK owns upload and message state. Implementations own platform picker
-/// and recorder dependencies, permissions, and temporary resources.
+/// The SDK provides a built-in implementation. Supply a custom implementation
+/// only when the host app needs different picker or recorder behavior. The SDK
+/// continues to own upload and message state; custom implementations own their
+/// platform dependencies, permissions, and temporary resources.
 abstract interface class CerqleMediaAdapter {
-  /// Opens the host image picker and returns null when selection is cancelled.
+  /// Opens an image picker and returns null when selection is cancelled.
   Future<CerqleUpload?> pickImage();
 
-  /// Opens the host document picker and returns null when selection is cancelled.
+  /// Opens a document picker and returns null when selection is cancelled.
   Future<CerqleUpload?> pickDocument();
 
-  /// Starts a host-owned microphone recording session.
+  /// Starts a microphone recording session.
   Future<void> startAudioRecording();
 
   /// Stops recording and returns audio, or null when no recording is available.
   Future<CerqleUpload?> stopAudioRecording();
 
-  /// Cancels recording and releases host-owned temporary resources.
+  /// Cancels recording and releases temporary resources.
   Future<void> cancelAudioRecording();
 }

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.1 - 2026-09-19
+
 ### Added
 
 - Added opt-in `CerqleConfig.requireNotificationPermission` gating for modal
@@ -10,12 +12,19 @@
 
 - Added a compact, single-row message composer with focus-driven expansion and refreshed chat action icons.
 - Added configurable full-screen status-bar icon brightness.
+- Added built-in image picking, document selection, and voice recording for the
+  prebuilt composer. A custom `CerqleMediaAdapter` is now only needed to
+  override the default behavior.
+- Added `CERQLE_ONESIGNAL_APP_ID` support to the runnable example, with fallback
+  to `CerqleConfig.defaultOneSignalAppId` when unset.
 
 ### Changed
 
 - Replaced timer-based foreground polling with Pusher as the primary live conversation transport.
 - Removed `CerqlePollingConfig` and `CerqleConfig.polling`; retained bounded pull-to-refresh and initial history pagination without a periodic scheduler.
 - Realtime connections now follow listener and application lifecycle demand and retry failed initial socket connections.
+- Simplified the example integration by removing its duplicate media adapter
+  and direct picker/recorder dependencies.
 
 ## 0.1.0
 

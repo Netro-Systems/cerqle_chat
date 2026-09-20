@@ -47,7 +47,7 @@ packages:
       path: ".."
       relative: true
     source: path
-    version: "0.1.0"
+    version: "0.1.1"
   characters:
     dependency: transitive
     description:
@@ -129,7 +129,7 @@ packages:
     source: hosted
     version: "0.1.2"
   file_selector:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: file_selector
       sha256: bd15e43e9268db636b53eeaca9f56324d1622af30e5c34d6e267649758c84d9a
@@ -320,7 +320,7 @@ packages:
     source: hosted
     version: "4.1.2"
   image_picker:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: image_picker
       sha256: d8402284df184bc05f4a2210c6c23983b0720f4cd87cbd05c5390a78af602667
@@ -640,7 +640,7 @@ packages:
     source: hosted
     version: "2.2.0"
   record:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: record
       sha256: "82539d1372e23cf51375fdfcba084f39912bcbf9a953b75d56596691f8f11c0f"

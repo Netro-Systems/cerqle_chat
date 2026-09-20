@@ -68,7 +68,7 @@ class CerqleConfig {
   /// Whether the controller may publish throttled visitor typing updates.
   final bool enableTyping;
 
-  /// Optional host bridge for image selection and audio recording.
+  /// Optional override for the SDK's built-in media picker and recorder.
   final CerqleMediaAdapter? mediaAdapter;
 
   /// Optional receiver for redacted operational diagnostics.

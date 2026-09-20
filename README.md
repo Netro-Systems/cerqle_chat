@@ -30,7 +30,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  cerqle_chat: ^0.1.0
+  cerqle_chat: ^0.1.1
 ```
 
 Or run:
@@ -196,7 +196,7 @@ Future<void> runHeadlessChat(CerqleConfig config) async {
 | `lightStatusBarIcons` | `bool` | `false` | Uses white status-bar icons and text in full-screen chat. Enable it for dark or strongly colored headers. |
 | `presentation` | `CerqlePresentation` | `CerqlePresentation.fullScreen` | Default modal style (`fullScreen`, `bottomSheet`, or `dialog`) used by `CerqleChat.open`. |
 | `enableTyping` | `bool` | `true` | Whether the controller publishes throttled visitor typing updates. |
-| `mediaAdapter` | `CerqleMediaAdapter?` | `null` | Optional bridge for image selection, voice recording, and file picking. |
+| `mediaAdapter` | `CerqleMediaAdapter?` | `null` | Optional override for the SDK's built-in image picker, voice recorder, and file picker. |
 | `diagnostics` | `CerqleDiagnosticsCallback?` | `null` | Callback receiving redacted operational metrics and lifecycle events. |
 | `oneSignalAppId` | `String` | `CerqleConfig.defaultOneSignalAppId` | OneSignal App ID used for push notification registration. |
 | `enableOneSignal` | `bool` | `true` | Whether device push notification tokens are registered on session start. |
@@ -284,6 +284,11 @@ Future<void> main() async {
 
 When a notification is tapped, the SDK automatically opens the chatbox. Live updates continue through Pusher while the chat is active.
 
+The SDK uses `CerqleConfig.defaultOneSignalAppId` by default. To use a
+different OneSignal application, pass its public app ID through
+`CerqleConfig.oneSignalAppId`. The runnable example reads this value from
+`CERQLE_ONESIGNAL_APP_ID` in its `.env` file.
+
 For full-screen chat on a dark or strongly colored header, set
 `lightStatusBarIcons: true`. The status bar remains transparent; this option
 changes only its icon and text brightness and does not affect embedded, dialog,
@@ -292,17 +297,19 @@ or bottom-sheet presentations.
 ---
 
 ### 📷 Media & Attachments
-To enable image picking, voice messaging, and document attachments in the composer, supply a `CerqleMediaAdapter`:
+Image picking, voice messaging, and document attachments work out of the box.
+No media configuration is required:
 
 ```dart
 import 'package:cerqle_chat/cerqle_chat.dart';
 
 final config = CerqleConfig(
   widgetKey: 'YOUR_WIDGET_KEY',
-  mediaAdapter: MyCustomMediaAdapter(),
 );
 ```
-*(See the [example](example) app for a full reference implementation).*
+
+For custom picker or recorder behavior, implement `CerqleMediaAdapter` and
+pass it through `mediaAdapter`. This replaces the SDK default.
 
 ---
 
