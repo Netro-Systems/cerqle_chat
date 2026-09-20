@@ -1,5 +1,12 @@
 part of '../view/chat_view.dart';
 
+final class _MediaPermissionDenied implements Exception {
+  const _MediaPermissionDenied(this.permission, {this.showSettings = false});
+
+  final String permission;
+  final bool showSettings;
+}
+
 class _DefaultMediaAdapter implements CerqleMediaAdapter {
   _DefaultMediaAdapter({ImagePicker? imagePicker, AudioRecorder? recorder})
       : _imagePicker = imagePicker ?? ImagePicker(),
@@ -37,6 +44,28 @@ class _DefaultMediaAdapter implements CerqleMediaAdapter {
       allowedMimeTypes: const <String>{'image/jpeg', 'image/png', 'image/webp'},
     );
     return CerqleUpload(bytes: bytes, filename: filename, mimeType: mimeType);
+  }
+
+  Future<void> _ensureMediaPermission(
+      Permission permission, String label) async {
+    final status = await permission.status;
+    if (status.isGranted || status.isLimited) return;
+    if (status.isPermanentlyDenied) {
+      throw _MediaPermissionDenied(label, showSettings: true);
+    }
+    if (status.isRestricted) {
+      throw CerqleException(
+        code: CerqleErrorCode.forbidden,
+        message: '$label access is restricted on this device.',
+        retryable: false,
+      );
+    }
+    final result = await permission.request();
+    if (!result.isGranted && !result.isLimited) {
+      // A denial belongs to this native prompt. Offer Settings only on a
+      // later tap, after checking the current permission state again.
+      throw _MediaPermissionDenied(label);
+    }
   }
 
   /// Opens camera to capture an image.
@@ -126,7 +155,11 @@ class _DefaultMediaAdapter implements CerqleMediaAdapter {
     if (_recordingSubscription != null) {
       throw StateError('An audio recording is already active.');
     }
-    if (!await _recorder.hasPermission()) {
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android)) {
+      await _ensureMediaPermission(Permission.microphone, 'Microphone');
+    } else if (!await _recorder.hasPermission()) {
       throw const CerqleException(
         code: CerqleErrorCode.forbidden,
         message: 'Microphone access was not granted.',

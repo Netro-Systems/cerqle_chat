@@ -1,6 +1,80 @@
 part of 'chat_widgets_test.dart';
 
 void registerComposerHandoffTests(CerqleConfig config) {
+  for (final platform in [TargetPlatform.iOS, TargetPlatform.android]) {
+    testWidgets(
+        '$platform Microphone denial is silent until the next blocked tap',
+        (tester) async {
+      const settingsChannel =
+          MethodChannel('com.spencerccf.app_settings/methods');
+      const permissionChannel =
+          MethodChannel('flutter.baseflow.com/permissions/methods');
+      const recordChannel = MethodChannel('com.llfbandit.record/messages');
+      var status = 0; // denied but requestable
+      var requests = 0;
+      var settingsOpens = 0;
+      final denialCount = platform == TargetPlatform.iOS ? 1 : 2;
+      final messenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(settingsChannel, (call) async {
+        settingsOpens++;
+        return null;
+      });
+      messenger.setMockMethodCallHandler(permissionChannel, (call) async {
+        if (call.method == 'checkPermissionStatus') return status;
+        if (call.method == 'requestPermissions') {
+          requests++;
+          status = requests >= denialCount ? 4 : 0;
+          return <int, int>{(call.arguments as List).single as int: status};
+        }
+        throw StateError('Unexpected permission call: ${call.method}');
+      });
+      messenger.setMockMethodCallHandler(recordChannel, (call) async => null);
+      addTearDown(() {
+        messenger.setMockMethodCallHandler(settingsChannel, null);
+        messenger.setMockMethodCallHandler(permissionChannel, null);
+        messenger.setMockMethodCallHandler(recordChannel, null);
+      });
+      final runtime = _runtime(config, MockClient((request) async {
+        return http.Response(
+            jsonEncode(request.url.path.endsWith('/session')
+                ? sessionResponse()
+                : refreshResponse()),
+            200);
+      }));
+      await tester.pumpWidget(
+          _app(CerqleChatView(config: config, controller: runtime.controller)));
+      await tester.pumpAndSettle();
+      Future<void> tapMedia() async {
+        await tester.tap(find.byTooltip('Record voice message'));
+        await tester.pumpAndSettle();
+      }
+
+      for (var attempt = 0; attempt < denialCount; attempt++) {
+        await tapMedia();
+        expect(find.byType(SnackBar), findsNothing);
+        expect(requests, attempt + 1);
+        expect(find.bySemanticsLabel(RegExp('Recording voice message')),
+            findsNothing);
+      }
+      await tapMedia();
+      expect(
+          find.text('Enable Microphone access in Settings.'), findsOneWidget);
+      expect(requests, denialCount);
+      await tester.tap(find.text('Settings'));
+      await tester.pumpAndSettle();
+      expect(settingsOpens, 1);
+      // A Settings change must be checked afresh rather than cached.
+      status = 0;
+      await tapMedia();
+      expect(requests, denialCount + 1);
+      expect(find.byType(SnackBar), findsNothing);
+      expect(find.byType(AlertDialog), findsNothing);
+      await tester.pumpWidget(const SizedBox.shrink());
+      await runtime.controller.dispose();
+    }, variant: TargetPlatformVariant({platform}));
+  }
+
   testWidgets('default composer picks images and records voice through adapter',
       (tester) async {
     final mediaAdapter = _FakeMediaAdapter();

@@ -343,7 +343,10 @@ class _ComposerState extends State<_Composer> {
           _isRecording = false;
           _stopRecordingTimer();
         });
-        _showMediaError(error, 'The voice message could not be recorded.');
+        await _handleMediaSelectionError(
+          error,
+          'The voice message could not be recorded.',
+        );
       }
     } finally {
       if (mounted) setState(() => _mediaBusy = false);
@@ -390,6 +393,47 @@ class _ComposerState extends State<_Composer> {
           _mediaBusy = false;
           _stopRecordingTimer();
         });
+      }
+    }
+  }
+
+  Future<void> _handleMediaSelectionError(Object error, String fallback) async {
+    if (error is _MediaPermissionDenied && !error.showSettings) return;
+    final permission = switch (error) {
+      _MediaPermissionDenied(:final permission) => permission,
+      _ => null,
+    };
+    if (permission == null) {
+      _showMediaError(error, fallback);
+      return;
+    }
+
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    if (messenger == null) return;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          content: Text('Enable $permission access in Settings.'),
+          behavior: SnackBarBehavior.fixed,
+          duration: const Duration(seconds: 4),
+          action: SnackBarAction(
+            label: 'Settings',
+            onPressed: () => unawaited(_openMediaSettings()),
+          ),
+        ),
+      );
+  }
+
+  Future<void> _openMediaSettings() async {
+    try {
+      await AppSettings.openAppSettings();
+    } on Object {
+      if (mounted) {
+        _showMediaError(
+          StateError('Settings unavailable'),
+          'Settings could not be opened. Please open app settings manually.',
+        );
       }
     }
   }
