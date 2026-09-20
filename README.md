@@ -50,6 +50,22 @@ flutter pub add cerqle_chat
 * **iOS & macOS**: Enable **Keychain Sharing** in Xcode and include a `keychain-access-groups` entitlement. The runnable [example](example) contains the required configuration.
 * **Web**: Deploy over HTTPS (browser session storage inherits the origin's security).
 
+For built-in voice recording, Android hosts must declare
+`android.permission.RECORD_AUDIO` and use `compileSdk` 35 or newer.
+iOS hosts must provide `NSMicrophoneUsageDescription`. CocoaPods hosts must also
+activate microphone support in the existing `post_install` build-configuration
+loop (as shown in `example/ios/Podfile`):
+
+```ruby
+config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']
+config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] += [
+  'PERMISSION_MICROPHONE=1',
+]
+```
+
+A denied microphone prompt closes silently. A later attempt with permanently denied
+access shows a Settings snackbar. Permission is checked again on every attempt.
+
 ---
 
 ## Quick Start
