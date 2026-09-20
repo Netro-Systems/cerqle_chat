@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:http/http.dart' as http;
@@ -22,11 +22,6 @@ void main() {
     widgetKey: 'test-widget',
     apiBaseUrl: 'https://chat.example.com',
     enableOneSignal: false,
-    polling: CerqlePollingConfig(
-      visibleInterval: Duration(minutes: 1),
-      idleInterval: Duration(minutes: 1),
-      failureMaxInterval: Duration(minutes: 1),
-    ),
   );
 
   registerViewStateTests(config);

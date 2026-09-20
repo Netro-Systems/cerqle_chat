@@ -1,5 +1,31 @@
 # Changelog
 
+## Unreleased
+
+## 0.1.1 - 2026-09-19
+
+### Added
+
+- Added opt-in `CerqleConfig.requireNotificationPermission` gating for modal
+  chat. Denied permission keeps chat closed, with an Android/iOS notification-
+  settings action when the native prompt is unavailable.
+
+- Added a compact, single-row message composer with focus-driven expansion and refreshed chat action icons.
+- Added configurable full-screen status-bar icon brightness.
+- Added built-in image picking, document selection, and voice recording for the
+  prebuilt composer. A custom `CerqleMediaAdapter` is now only needed to
+  override the default behavior.
+- Added `CERQLE_ONESIGNAL_APP_ID` support to the runnable example, with fallback
+  to `CerqleConfig.defaultOneSignalAppId` when unset.
+
+### Changed
+
+- Replaced timer-based foreground polling with Pusher as the primary live conversation transport.
+- Removed `CerqlePollingConfig` and `CerqleConfig.polling`; retained bounded pull-to-refresh and initial history pagination without a periodic scheduler.
+- Realtime connections now follow listener and application lifecycle demand and retry failed initial socket connections.
+- Simplified the example integration by removing its duplicate media adapter
+  and direct picker/recorder dependencies.
+
 ## 0.1.0
 
 ### Added
@@ -8,7 +34,7 @@
 - Anonymous and verified-user chat sessions with secure, identity-scoped storage.
 - Public widget API client with injectable HTTP transport, Pusher realtime WebSocket channels, and OneSignal push notification integration.
 - Typed chat state, events, errors, and redacted diagnostics.
-- Lifecycle-aware foreground polling with message ordering, deduplication, and send/server-echo reconciliation.
+- Message ordering, deduplication, and send/server-echo reconciliation.
 - Realtime message streaming and typing updates over private Pusher channels (`WidgetMessageCreated`, `WidgetTypingChanged`, `WidgetHandoffUpdated`).
 - OneSignal push notification integration with automatic device ID registration and click handling.
 - Text, image, and audio message transport using the current visitor API.

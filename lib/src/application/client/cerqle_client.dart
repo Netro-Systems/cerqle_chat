@@ -56,9 +56,9 @@ class CerqleClient {
     return _sessions.start(deviceId: deviceId);
   }
 
-  Future<WidgetPollResult> _poll(int after) {
+  Future<WidgetRefreshResult> _refresh(int after) {
     final session = _requireSession();
-    return _remoteDataSource.poll(
+    return _remoteDataSource.refresh(
       widgetKey: config.widgetKey,
       token: session.token,
       after: after,

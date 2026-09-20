@@ -2,13 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:cerqle_chat/src/application/services/widget_realtime_connector.dart';
-import 'package:cerqle_chat/src/data/network/response_decoder.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:cerqle_chat/cerqle_chat.dart';
+import 'package:cerqle_chat/src/application/services/widget_realtime_connector.dart';
+import 'package:cerqle_chat/src/data/network/response_decoder.dart';
 import 'package:cerqle_chat/src/data/storage/session_scope.dart';
 
 import '../../support/support.dart';
@@ -27,11 +27,6 @@ void main() {
     widgetKey: 'test-widget',
     apiBaseUrl: 'https://chat.example.com/base/',
     enableOneSignal: false,
-    polling: CerqlePollingConfig(
-      visibleInterval: Duration(minutes: 1),
-      idleInterval: Duration(minutes: 1),
-      failureMaxInterval: Duration(minutes: 1),
-    ),
   );
 
   registerSessionTests(config);

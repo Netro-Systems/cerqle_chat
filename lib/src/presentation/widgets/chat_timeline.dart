@@ -100,12 +100,10 @@ class _SupportAvatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final assetSize = size * 0.56;
-    final fallback = Center(
-      child: SizedBox.square(
-        dimension: assetSize,
-        child: const CerqleBrandLogo(
-          imageKey: ValueKey<String>('cerqle-support-logo'),
-        ),
+    const fallback = SizedBox.expand(
+      child: CerqleBrandLogo(
+        imageKey: ValueKey<String>('cerqle-support-logo'),
+        fit: BoxFit.cover,
       ),
     );
     return Semantics(

@@ -9,11 +9,6 @@ void registerComposerHandoffTests(CerqleConfig config) {
       apiBaseUrl: 'https://chat.example.com',
       enableOneSignal: false,
       mediaAdapter: mediaAdapter,
-      polling: const CerqlePollingConfig(
-        visibleInterval: Duration(minutes: 1),
-        idleInterval: Duration(minutes: 1),
-        failureMaxInterval: Duration(minutes: 1),
-      ),
     );
     var uploadCount = 0;
     final uploadedContentTypes = <String>[];
@@ -48,7 +43,7 @@ void registerComposerHandoffTests(CerqleConfig config) {
             200,
           );
         }
-        return http.Response(jsonEncode(pollResponse()), 200);
+        return http.Response(jsonEncode(refreshResponse()), 200);
       }),
     );
 
@@ -143,7 +138,7 @@ void registerComposerHandoffTests(CerqleConfig config) {
             200,
           );
         }
-        return http.Response(jsonEncode(pollResponse()), 200);
+        return http.Response(jsonEncode(refreshResponse()), 200);
       }),
     );
 

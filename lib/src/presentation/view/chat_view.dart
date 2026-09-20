@@ -73,7 +73,7 @@ class CerqleChatView extends StatefulWidget {
     this.onClose,
   });
 
-  /// Widget, identity, transport, polling, and theme configuration.
+  /// Widget, identity, transport, realtime, and theme configuration.
   final CerqleConfig config;
 
   /// Optional host-owned controller.
@@ -333,12 +333,6 @@ class _CerqleChatViewState extends State<CerqleChatView> {
                                 _controller.removeMessage(message.localId),
                               )
                           : null,
-                      onRefresh:
-                          message.status == CerqleMessageStatus.unconfirmed
-                              ? () => unawaited(
-                                    _controller.refresh().catchError((_) {}),
-                                  )
-                              : null,
                     ),
               );
             },

@@ -47,7 +47,7 @@ Map<String, Object?> sessionResponse({
       'unknown_root_field': <String, Object?>{'safe': true},
     };
 
-Map<String, Object?> pollResponse({
+Map<String, Object?> refreshResponse({
   List<Map<String, Object?>> messages = const <Map<String, Object?>>[],
   bool online = true,
   bool typing = false,

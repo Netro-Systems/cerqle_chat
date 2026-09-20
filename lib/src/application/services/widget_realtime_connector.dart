@@ -30,11 +30,9 @@ abstract interface class WidgetRealtimeConnector {
 
 final class PusherWidgetRealtimeConnector implements WidgetRealtimeConnector {
   PusherWidgetRealtimeConnector({http.Client? httpClient})
-      : _httpClient = httpClient ?? http.Client(),
-        _ownsHttpClient = httpClient == null;
+      : _httpClient = httpClient ?? http.Client();
 
   final http.Client _httpClient;
-  final bool _ownsHttpClient;
   final List<StreamSubscription<dynamic>> _subscriptions =
       <StreamSubscription<dynamic>>[];
 
@@ -129,7 +127,12 @@ final class PusherWidgetRealtimeConnector implements WidgetRealtimeConnector {
     _channel = channel;
     _activeSignature = signature;
 
-    await client.connect();
+    try {
+      await client.connect();
+    } on Object {
+      await stop();
+      rethrow;
+    }
   }
 
   @override
@@ -153,16 +156,13 @@ final class PusherWidgetRealtimeConnector implements WidgetRealtimeConnector {
       try {
         await client.disconnect();
       } on Object {
-        // Best-effort shutdown keeps the fallback poll path alive.
+        // Best-effort shutdown avoids blocking lifecycle transitions.
       }
       try {
         client.dispose();
       } on Object {
         // A disposed client cannot be reused, so ignore duplicate shutdowns.
       }
-    }
-    if (_ownsHttpClient) {
-      _httpClient.close();
     }
   }
 }

@@ -9,11 +9,8 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  file_selector: ^1.0.3
   flutter_dotenv: ^6.0.1
   flutter_svg: ^2.3.0
-  image_picker: ^1.2.3
-  record: ^7.1.1
   cerqle_chat:
     path: ../
 

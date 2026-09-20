@@ -75,7 +75,11 @@ class _FilePreview extends StatelessWidget {
           IconButton(
             tooltip: 'Discard file',
             onPressed: sending ? null : onDiscard,
-            icon: const Icon(Icons.close, size: 20),
+            icon: _ComposerAssetIcon(
+              assetName: 'assets/icons/remove.png',
+              color: sending ? colors.onSurfaceMuted : colors.onSurface,
+              size: 26,
+            ),
           ),
         ],
       ),

@@ -4,7 +4,13 @@ part of '../configuration/cerqle_config.dart';
 typedef CerqleDiagnosticsCallback = void Function(CerqleDiagnosticEvent event);
 
 /// Stable categories of redacted operational diagnostics.
-enum CerqleDiagnosticKind { initialization, lifecycle, connection, poll, send }
+enum CerqleDiagnosticKind {
+  initialization,
+  lifecycle,
+  connection,
+  refresh,
+  send,
+}
 
 /// A redacted operational event that contains no visitor or message content.
 @immutable

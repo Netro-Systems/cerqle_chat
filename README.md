@@ -3,7 +3,7 @@
 ![pub version](https://img.shields.io/pub/v/cerqle_chat?label=cerqle_chat)
 ![license](https://img.shields.io/badge/license-MIT-green)
 
-A customizable, battery-efficient Flutter SDK for embedding Cerqle customer support chat into mobile, web, and desktop apps. It provides identity-scoped visitor sessions, real-time messaging, Pusher channel synchronization, foreground polling, prebuilt customizable UI, and push notifications.
+A customizable, battery-efficient Flutter SDK for embedding Cerqle customer support chat into mobile, web, and desktop apps. It provides identity-scoped visitor sessions, Pusher-powered real-time messaging, prebuilt customizable UI, and push notifications.
 
 ---
 
@@ -15,7 +15,7 @@ A customizable, battery-efficient Flutter SDK for embedding Cerqle customer supp
 | **OneSignal Push Notifications** | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Realtime Pusher Streaming** | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Text, Image, Audio & File Messaging** | ✅ Yes | ✅ Yes | ✅ Yes |
-| **Foreground Polling & Sync** | ✅ Yes | ✅ Yes | ✅ Yes |
+| **Pusher Realtime Sync** | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Typing Indicators & Human Handoff** | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Prebuilt UI (Screens, Sheets, Dialogs, Launchers)** | ✅ Yes | ✅ Yes | ✅ Yes |
 | **Required Pre-Chat Lead Forms** | ✅ Yes | ✅ Yes | ✅ Yes |
@@ -30,7 +30,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  cerqle_chat: ^0.1.0
+  cerqle_chat: ^0.1.1
 ```
 
 Or run:
@@ -193,13 +193,14 @@ Future<void> runHeadlessChat(CerqleConfig config) async {
 | `user` | `CerqleUser?` | `null` | Visitor identity, profile data, and HMAC signature for verified users. |
 | `theme` | `CerqleThemeData?` | `null` | Presentation overrides for colors, bubble radius, spacing, and brightness. |
 | `useApiColors` | `bool` | `true` | When true, applies the dashboard-configured branding palette automatically. |
+| `lightStatusBarIcons` | `bool` | `false` | Uses white status-bar icons and text in full-screen chat. Enable it for dark or strongly colored headers. |
 | `presentation` | `CerqlePresentation` | `CerqlePresentation.fullScreen` | Default modal style (`fullScreen`, `bottomSheet`, or `dialog`) used by `CerqleChat.open`. |
 | `enableTyping` | `bool` | `true` | Whether the controller publishes throttled visitor typing updates. |
-| `mediaAdapter` | `CerqleMediaAdapter?` | `null` | Optional bridge for image selection, voice recording, and file picking. |
-| `polling` | `CerqlePollingConfig` | `const CerqlePollingConfig()` | Intervals for active (`3s`), idle (`8s`), and failure backoff (`30s`) foreground polling. |
+| `mediaAdapter` | `CerqleMediaAdapter?` | `null` | Optional override for the SDK's built-in image picker, voice recorder, and file picker. |
 | `diagnostics` | `CerqleDiagnosticsCallback?` | `null` | Callback receiving redacted operational metrics and lifecycle events. |
 | `oneSignalAppId` | `String` | `CerqleConfig.defaultOneSignalAppId` | OneSignal App ID used for push notification registration. |
 | `enableOneSignal` | `bool` | `true` | Whether device push notification tokens are registered on session start. |
+| `requireNotificationPermission` | `bool` | `false` | When true, notification permission is required to open a modal chat. Denial keeps chat closed; if the OS prompt is unavailable, a compact message links to notification settings. |
 | `sessionStore` | `CerqleSessionStore?` | `null` | Custom session store override (defaults to secure encrypted platform storage). |
 
 ---
@@ -269,6 +270,7 @@ Future<void> main() async {
   final config = CerqleConfig(
     widgetKey: 'YOUR_WIDGET_KEY',
     user: const CerqleUser(name: 'Demo User', email: 'user@demo.com'),
+    requireNotificationPermission: true,
   );
 
   CerqleChat.initializeNotificationHandlers(
@@ -280,22 +282,34 @@ Future<void> main() async {
 }
 ```
 
-When a notification is tapped, the SDK automatically opens the chatbox and refreshes messages.
+When a notification is tapped, the SDK automatically opens the chatbox. Live updates continue through Pusher while the chat is active.
+
+The SDK uses `CerqleConfig.defaultOneSignalAppId` by default. To use a
+different OneSignal application, pass its public app ID through
+`CerqleConfig.oneSignalAppId`. The runnable example reads this value from
+`CERQLE_ONESIGNAL_APP_ID` in its `.env` file.
+
+For full-screen chat on a dark or strongly colored header, set
+`lightStatusBarIcons: true`. The status bar remains transparent; this option
+changes only its icon and text brightness and does not affect embedded, dialog,
+or bottom-sheet presentations.
 
 ---
 
 ### 📷 Media & Attachments
-To enable image picking, voice messaging, and document attachments in the composer, supply a `CerqleMediaAdapter`:
+Image picking, voice messaging, and document attachments work out of the box.
+No media configuration is required:
 
 ```dart
 import 'package:cerqle_chat/cerqle_chat.dart';
 
 final config = CerqleConfig(
   widgetKey: 'YOUR_WIDGET_KEY',
-  mediaAdapter: MyCustomMediaAdapter(),
 );
 ```
-*(See the [example](example) app for a full reference implementation).*
+
+For custom picker or recorder behavior, implement `CerqleMediaAdapter` and
+pass it through `mediaAdapter`. This replaces the SDK default.
 
 ---
 
@@ -320,7 +334,7 @@ Future<void> submitLead(CerqleChatController controller) async {
 * **Platform Security**: Visitor tokens are bearer credentials persisted via `CerqleSessionStore` using platform-native secure storage (`flutter_secure_storage`).
 * **Authoritative Confirmation**: Messages transition from `pending` to `sent` only upon server receipt and ID issuance.
 * **Network Failures & Unconfirmed State**: If a request disconnects or times out before receiving a response, the message is marked `unconfirmed` rather than failed, avoiding duplicate message sends.
-* **Battery-Efficient Sync**: Foreground polling and Pusher realtime channels synchronize replies and pause automatically when the application is backgrounded or when chat is closed.
+* **Realtime Sync**: A private Pusher channel delivers messages, typing changes, and handoff updates while chat is active, and disconnects automatically in the background or when chat is closed. Pull-to-refresh remains available as a user-triggered consistency check, and full initial history is loaded through bounded pagination; neither path runs on a timer.
 * **Safe Diagnostics**: Diagnostic callbacks emit strictly redacted operational telemetry (durations, error codes, HTTP statuses) without logging PII, bearer tokens, or message content.
 
 ---

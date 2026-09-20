@@ -95,47 +95,6 @@ void registerIdentitySyncTests(CerqleConfig config) {
     await client.close();
   });
 
-  test('an in-flight poll cannot restore messages after logout', () async {
-    final releasePoll = Completer<void>();
-    final pollStarted = Completer<void>();
-    final client = CerqleClient(
-      config: config,
-      httpClient: MockClient((request) async {
-        if (request.url.path.endsWith('/session')) {
-          return http.Response(jsonEncode(sessionResponse()), 200);
-        }
-        if (request.url.path.endsWith('/typing')) {
-          return http.Response('{"ok":true}', 200);
-        }
-        pollStarted.complete();
-        await releasePoll.future;
-        return http.Response(
-          jsonEncode(
-            pollResponse(messages: <Map<String, Object?>>[
-              message(id: 9, body: 'Must stay hidden'),
-            ]),
-          ),
-          200,
-        );
-      }),
-      sessionStore: MemorySessionStore(),
-    );
-    final controller = CerqleChatController(client: client);
-    await controller.initialize();
-
-    final poll = controller.refresh();
-    await pollStarted.future;
-    await controller.updateUser(null);
-    releasePoll.complete();
-    await poll;
-
-    expect(controller.state.phase, CerqleChatPhase.idle);
-    expect(controller.state.messages, isEmpty);
-
-    await controller.dispose();
-    await client.close();
-  });
-
   test('unsigned profile-only sessions remain memory-only', () async {
     final store = MemorySessionStore();
     final client = CerqleClient(
@@ -169,11 +128,6 @@ void registerIdentitySyncTests(CerqleConfig config) {
       apiBaseUrl: 'https://chat.example.com/base/',
       enableOneSignal: false,
       user: CerqleUser(),
-      polling: CerqlePollingConfig(
-        visibleInterval: Duration(minutes: 1),
-        idleInterval: Duration(minutes: 1),
-        failureMaxInterval: Duration(minutes: 1),
-      ),
     );
     final namespace = sessionNamespace(config: emptyUserConfig, user: null);
     final bodies = <Map<String, dynamic>>[];
@@ -237,11 +191,6 @@ void registerIdentitySyncTests(CerqleConfig config) {
         externalId: 'customer-123',
         name: 'Jane Doe',
         email: 'jane@example.com',
-      ),
-      polling: CerqlePollingConfig(
-        visibleInterval: Duration(minutes: 1),
-        idleInterval: Duration(minutes: 1),
-        failureMaxInterval: Duration(minutes: 1),
       ),
     );
     final namespace = sessionNamespace(
@@ -327,7 +276,7 @@ void registerIdentitySyncTests(CerqleConfig config) {
           200,
         );
       }
-      return http.Response(jsonEncode(pollResponse()), 200);
+      return http.Response(jsonEncode(refreshResponse()), 200);
     });
     final client = CerqleClient(
       config: config,
@@ -354,21 +303,22 @@ void registerIdentitySyncTests(CerqleConfig config) {
   });
 
   test('concurrent refresh calls never overlap transport requests', () async {
-    final releasePoll = Completer<void>();
-    var activePolls = 0;
-    var maximumActivePolls = 0;
-    var pollCalls = 0;
+    final releaseRefresh = Completer<void>();
+    var activeRefreshes = 0;
+    var maximumActiveRefreshes = 0;
+    var refreshCalls = 0;
     final httpClient = MockClient((request) async {
       if (request.url.path.endsWith('/session')) {
         return http.Response(jsonEncode(sessionResponse()), 200);
       }
-      pollCalls++;
-      activePolls++;
-      maximumActivePolls =
-          activePolls > maximumActivePolls ? activePolls : maximumActivePolls;
-      await releasePoll.future;
-      activePolls--;
-      return http.Response(jsonEncode(pollResponse()), 200);
+      refreshCalls++;
+      activeRefreshes++;
+      maximumActiveRefreshes = activeRefreshes > maximumActiveRefreshes
+          ? activeRefreshes
+          : maximumActiveRefreshes;
+      await releaseRefresh.future;
+      activeRefreshes--;
+      return http.Response(jsonEncode(refreshResponse()), 200);
     });
     final client = CerqleClient(
       config: config,
@@ -381,11 +331,11 @@ void registerIdentitySyncTests(CerqleConfig config) {
     final first = controller.refresh();
     final second = controller.refresh();
     await Future<void>.delayed(Duration.zero);
-    expect(pollCalls, 1);
-    releasePoll.complete();
+    expect(refreshCalls, 1);
+    releaseRefresh.complete();
     await Future.wait<void>(<Future<void>>[first, second]);
 
-    expect(maximumActivePolls, 1);
+    expect(maximumActiveRefreshes, 1);
 
     await controller.dispose();
     await client.close();

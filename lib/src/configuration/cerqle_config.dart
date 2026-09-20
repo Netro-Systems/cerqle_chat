@@ -8,7 +8,6 @@ import '../domain/errors/cerqle_exception.dart';
 import '../domain/events/chat_event.dart';
 
 part '../diagnostics/diagnostic_event.dart';
-part 'polling_config.dart';
 part 'presentation_config.dart';
 part 'theme_data.dart';
 part 'user.dart';
@@ -27,13 +26,14 @@ class CerqleConfig {
     this.user,
     this.theme,
     this.useApiColors = true,
+    this.lightStatusBarIcons = false,
     this.presentation = CerqlePresentation.fullScreen,
     this.enableTyping = true,
     this.mediaAdapter,
-    this.polling = const CerqlePollingConfig(),
     this.diagnostics,
     this.oneSignalAppId = defaultOneSignalAppId,
     this.enableOneSignal = true,
+    this.requireNotificationPermission = false,
     this.sessionStore,
   });
 
@@ -56,17 +56,20 @@ class CerqleConfig {
   /// Whether server-provided colors participate in theme resolution.
   final bool useApiColors;
 
+  /// Whether full-screen chat uses light (white) status-bar icons and text.
+  ///
+  /// Enable this for dark or strongly colored chat headers. This setting does
+  /// not affect bottom-sheet, dialog, or embedded presentations.
+  final bool lightStatusBarIcons;
+
   /// Default presentation used by [CerqleChat.open].
   final CerqlePresentation presentation;
 
   /// Whether the controller may publish throttled visitor typing updates.
   final bool enableTyping;
 
-  /// Optional host bridge for image selection and audio recording.
+  /// Optional override for the SDK's built-in media picker and recorder.
   final CerqleMediaAdapter? mediaAdapter;
-
-  /// Foreground polling intervals.
-  final CerqlePollingConfig polling;
 
   /// Optional receiver for redacted operational diagnostics.
   final CerqleDiagnosticsCallback? diagnostics;
@@ -76,6 +79,15 @@ class CerqleConfig {
 
   /// Whether OneSignal push notification device registration is enabled.
   final bool enableOneSignal;
+
+  /// Whether notification permission is required to open a modal chat.
+  ///
+  /// A denied or cancelled request keeps the chat closed. When permission can
+  /// no longer be requested, the SDK shows a compact message with an action
+  /// that opens the app's notification settings.
+  /// This does not change the startup request made by
+  /// [CerqleChat.initializeNotificationHandlers].
+  final bool requireNotificationPermission;
 
   /// Optional session store override. Defaults to secure storage.
   final CerqleSessionStore? sessionStore;

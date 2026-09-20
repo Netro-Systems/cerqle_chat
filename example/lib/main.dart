@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:cerqle_chat/cerqle_chat.dart';
 
-import 'src/example_media_adapter.dart';
 import 'src/theme/example_theme.dart';
 import 'src/widgets/example_brand_header.dart';
 import 'src/widgets/example_hero_card.dart';
@@ -16,11 +15,17 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
   final widgetKey = dotenv.get('CERQLE_WIDGET_KEY').trim();
+  final configuredOneSignalAppId =
+      dotenv.maybeGet('CERQLE_ONESIGNAL_APP_ID')?.trim();
   final config = CerqleConfig(
     widgetKey: widgetKey,
+    requireNotificationPermission: true,
+    lightStatusBarIcons: true,
     apiBaseUrl:
-        dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://cerqle.ai',
-    mediaAdapter: ExampleMediaAdapter(),
+        dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://yourdomain.com',
+    oneSignalAppId: configuredOneSignalAppId?.isNotEmpty == true
+        ? configuredOneSignalAppId!
+        : CerqleConfig.defaultOneSignalAppId,
     user: const CerqleUser(
       name: 'Demo Visitor',
       email: 'visitor@demo.com',

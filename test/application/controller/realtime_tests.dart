@@ -30,7 +30,7 @@ void registerRealtimeTests(CerqleConfig config) {
         );
       }
       if (request.url.path.endsWith('/messages')) {
-        return http.Response(jsonEncode(pollResponse()), 200);
+        return http.Response(jsonEncode(refreshResponse()), 200);
       }
       if (request.url.path.endsWith('/typing')) {
         return http.Response('{}', 200);
@@ -79,6 +79,7 @@ void registerRealtimeTests(CerqleConfig config) {
 
 final class _FakeWidgetRealtimeConnector implements WidgetRealtimeConnector {
   int startCalls = 0;
+  int stopCalls = 0;
   int? lastConversationId;
   WidgetRealtimePayloadCallback? _onMessageCreated;
   WidgetRealtimePayloadCallback? _onTypingChanged;
@@ -106,6 +107,7 @@ final class _FakeWidgetRealtimeConnector implements WidgetRealtimeConnector {
 
   @override
   Future<void> stop() async {
+    stopCalls++;
     _onMessageCreated = null;
     _onTypingChanged = null;
     _onHandoffUpdated = null;

@@ -51,7 +51,8 @@ void _registerRequestContractTests() {
       });
     });
 
-    test('text, poll, typing, and handoff match backend wire shapes', () async {
+    test('text, refresh, typing, and handoff match backend wire shapes',
+        () async {
       final requests = <http.BaseRequest>[];
       final bodies = <Map<String, dynamic>>[];
       final client = _RecordingClient((request) async {
@@ -71,7 +72,7 @@ void _registerRequestContractTests() {
           });
         }
         if (request.url.path.endsWith('/messages')) {
-          return _jsonResponse(pollResponse());
+          return _jsonResponse(refreshResponse());
         }
         if (request.url.path.endsWith('/handoff')) {
           return _jsonResponse(<String, Object?>{
@@ -94,7 +95,7 @@ void _registerRequestContractTests() {
         token: 'token-1',
         text: 'Hello',
       );
-      await api.poll(widgetKey: 'test-widget', token: 'token-1', after: 42);
+      await api.refresh(widgetKey: 'test-widget', token: 'token-1', after: 42);
       await api.setTyping(
         widgetKey: 'test-widget',
         token: 'token-1',

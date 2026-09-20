@@ -3,7 +3,7 @@ description: A customizable Flutter SDK for adding Cerqle customer chat to mobil
 homepage: https://cerqle.ai
 repository: https://github.com/cerqle/cerqle_chat
 issue_tracker: https://github.com/cerqle/cerqle_chat/issues
-version: 0.1.0
+version: 0.1.1
 
 topics:
   - chat
@@ -17,6 +17,7 @@ environment:
   flutter: '>=3.24.0'
 
 dependencies:
+  app_settings: ^7.0.0
   crypto: ^3.0.7
   dart_pusher_channels: ^1.3.1
   file_selector: ^1.0.3

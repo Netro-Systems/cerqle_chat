@@ -138,7 +138,13 @@ class _AudioPreviewState extends State<_AudioPreview> {
             IconButton(
               tooltip: 'Discard voice message',
               onPressed: widget.sending ? null : widget.onDiscard,
-              icon: const Icon(Icons.close),
+              icon: _ComposerAssetIcon(
+                assetName: 'assets/icons/remove.png',
+                color: widget.sending
+                    ? widget.colors.onSurfaceMuted
+                    : widget.colors.onSurface,
+                size: 26,
+              ),
             ),
           ],
         ),
