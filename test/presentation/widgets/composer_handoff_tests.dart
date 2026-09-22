@@ -184,9 +184,10 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('eligible handoff uses the human-agent prompt and connects',
+  testWidgets('header handoff works with a full-width host button theme',
       (tester) async {
     var handoffCalls = 0;
+    final handoffReady = Completer<void>();
     final runtime = _runtime(
       config,
       MockClient((request) async {
@@ -201,6 +202,7 @@ void registerComposerHandoffTests(CerqleConfig config) {
         }
         if (request.url.path.endsWith('/handoff')) {
           handoffCalls++;
+          await handoffReady.future;
           return http.Response(
             jsonEncode(<String, Object?>{
               'handoff': <String, Object?>{
@@ -216,19 +218,47 @@ void registerComposerHandoffTests(CerqleConfig config) {
       }),
     );
 
-    await tester.pumpWidget(_app(
-      CerqleChatView(config: config, controller: runtime.controller),
+    await tester.pumpWidget(MaterialApp(
+      theme: ThemeData(
+        outlinedButtonTheme: OutlinedButtonThemeData(
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 52),
+          ),
+        ),
+      ),
+      home: Scaffold(
+        body: CerqleChatView(config: config, controller: runtime.controller),
+      ),
     ));
     await tester.pump();
     await tester.pump();
 
-    expect(find.text('Prefer a person?'), findsOneWidget);
-    expect(find.text('Human Agent'), findsOneWidget);
-    await tester.tap(find.text('Human Agent'));
+    expect(tester.takeException(), isNull);
+    expect(find.text('Prefer a person?'), findsNothing);
+    final header = find.byKey(const ValueKey<String>('cerqle-chat-header'));
+    expect(
+      find.descendant(of: header, matching: find.text('AI')),
+      findsOneWidget,
+    );
+    expect(find.text('AI'), findsOneWidget);
+    await tester.tap(find.text('AI'));
+    await tester.pump();
+    expect(find.text('Connecting…'), findsNothing);
+    expect(find.descendant(of: header, matching: find.byType(ShaderMask)),
+        findsOneWidget);
+    await tester.pump(const Duration(milliseconds: 300));
+    expect(tester.takeException(), isNull);
+    handoffReady.complete();
     await tester.pumpAndSettle();
 
     expect(handoffCalls, 1);
-    expect(find.text('Connected to a human agent'), findsOneWidget);
+    expect(tester.takeException(), isNull);
+    expect(
+      find.descendant(of: header, matching: find.text('Agent')),
+      findsOneWidget,
+    );
+    expect(find.text('AI'), findsNothing);
+    expect(find.text('Connected to support'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await runtime.dispose();

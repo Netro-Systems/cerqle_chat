@@ -5,11 +5,13 @@ class _HandoffAction extends StatelessWidget {
     required this.state,
     required this.colors,
     required this.onPressed,
+    this.compact = false,
   });
 
   final CerqleChatState state;
   final CerqleResolvedTheme colors;
   final VoidCallback onPressed;
+  final bool compact;
 
   @override
   Widget build(BuildContext context) {
@@ -28,6 +30,31 @@ class _HandoffAction extends StatelessWidget {
     };
     final actionLabel =
         status == CerqleHandoffStatus.failed ? 'Try again' : 'Human Agent';
+    if (compact) {
+      return Tooltip(
+        message: isActionable ? 'Switch to a human agent' : prompt,
+        child: OutlinedButton(
+          onPressed: isActionable ? onPressed : null,
+          style: OutlinedButton.styleFrom(
+            foregroundColor: colors.onPrimary,
+            disabledForegroundColor: colors.onPrimary,
+            minimumSize: const Size(48, 28),
+            visualDensity: VisualDensity.compact,
+            side: BorderSide(color: colors.onPrimary.withValues(alpha: 0.6)),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+          ),
+          child: status == CerqleHandoffStatus.requesting
+              ? _HandoffShimmer(color: colors.onPrimary)
+              : Text(
+                  switch (status) {
+                    CerqleHandoffStatus.connected => 'Agent',
+                    CerqleHandoffStatus.failed => 'Try again',
+                    _ => 'AI',
+                  },
+                ),
+        ),
+      );
+    }
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -80,5 +107,67 @@ class _HandoffAction extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+class _HandoffShimmer extends StatefulWidget {
+  const _HandoffShimmer({required this.color});
+
+  final Color color;
+
+  @override
+  State<_HandoffShimmer> createState() => _HandoffShimmerState();
+}
+
+class _HandoffShimmerState extends State<_HandoffShimmer>
+    with SingleTickerProviderStateMixin {
+  late final _animation = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1200),
+  );
+
+  @override
+  Widget build(BuildContext context) {
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (reduceMotion) {
+      _animation.stop();
+    } else if (!_animation.isAnimating) {
+      _animation.repeat();
+    }
+    return Semantics(
+      label: 'Connecting to a human agent',
+      liveRegion: true,
+      child: SizedBox(
+        width: 32,
+        height: 12,
+        child: AnimatedBuilder(
+          animation: _animation,
+          child: const _ShimmerBlock(height: 12),
+          builder: (context, child) {
+            final travel = reduceMotion ? 0.0 : _animation.value * 3 - 1.5;
+            return ShaderMask(
+              blendMode: BlendMode.srcIn,
+              shaderCallback: (bounds) => LinearGradient(
+                begin: Alignment(travel - 1, 0),
+                end: Alignment(travel + 1, 0),
+                colors: <Color>[
+                  widget.color.withValues(alpha: 0.25),
+                  widget.color.withValues(alpha: 0.85),
+                  widget.color.withValues(alpha: 0.25),
+                ],
+                stops: const <double>[0.2, 0.5, 0.8],
+              ).createShader(bounds),
+              child: child,
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _animation.dispose();
+    super.dispose();
   }
 }
