@@ -20,6 +20,7 @@ import '../../domain/contracts/media_adapter.dart';
 import '../../domain/errors/cerqle_exception.dart';
 import '../../domain/models/models.dart';
 import '../media/remote_image.dart';
+import '../media/audio_source.dart';
 import '../theme/resolved_theme.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/brand_footer.dart';

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Fixed
+
+- Native voice-message playback and previews now use temporary audio files with
+  signature-based extensions, cleaned up when the player closes. Web retains
+  data-URI playback.
+- Recording state is cleared even when stopping or draining the recording fails,
+  so subsequent recording attempts are not blocked by a stale subscription.
+
 ## 0.1.1 - 2026-09-19
 
 ### Added
