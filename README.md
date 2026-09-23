@@ -30,7 +30,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  cerqle_chat: ^0.1.1
+  cerqle_chat: ^0.1.2
 ```
 
 Or run:
@@ -326,6 +326,22 @@ final config = CerqleConfig(
 
 For custom picker or recorder behavior, implement `CerqleMediaAdapter` and
 pass it through `mediaAdapter`. This replaces the SDK default.
+
+Native voice-message playback and previews use temporary audio files with
+format detection, which are cleaned up when the player closes. Web uses data-URI
+playback.
+
+---
+
+### Human Support & Conversation Activities
+
+The default chat UI shows a compact human-support banner when handoff is
+available. Visitors can select **Talk to an agent**, see request and connection
+status, and retry a failed request. Headless or custom UI integrations can call
+`controller.requestHumanAgent()` and observe `state.handoff`.
+
+Messages marked as activities by the backend (`kind: activity`) expose
+`CerqleMessage.isActivity` and appear as centered text in the conversation.
 
 ---
 

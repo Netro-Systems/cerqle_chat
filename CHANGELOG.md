@@ -1,8 +1,18 @@
 # Changelog
 
-## Unreleased
+## 0.1.2 - 2026-09-23
+
+### Added
+
+- Added a compact human-support banner with a “Talk to an agent” action,
+  request progress, connection status, and retry support in the default chat UI.
+- Added `CerqleMessage.isActivity` for backend-reported conversation activities,
+  displayed as centered text instead of message bubbles.
 
 ### Fixed
+
+- The initial microphone permission denial now closes silently. Later recording
+  attempts with permanently denied access show a snackbar linking to app settings.
 
 - Native voice-message playback and previews now use temporary audio files with
   signature-based extensions, cleaned up when the player closes. Web retains

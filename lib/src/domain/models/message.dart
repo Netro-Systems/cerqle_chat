@@ -37,6 +37,7 @@ class CerqleMessage {
     this.localUpload,
     this.senderName,
     this.sentBy,
+    this.isActivity = false,
     this.error,
   });
 
@@ -73,6 +74,9 @@ class CerqleMessage {
   /// Optional backend-supplied sender category.
   final CerqleSenderKind? sentBy;
 
+  /// Whether this is a backend-reported conversation activity.
+  final bool isActivity;
+
   /// Safe delivery failure, when applicable.
   final CerqleException? error;
 
@@ -98,6 +102,7 @@ class CerqleMessage {
     CerqleUpload? localUpload,
     String? senderName,
     CerqleSenderKind? sentBy,
+    bool? isActivity,
     CerqleException? error,
     bool clearError = false,
   }) =>
@@ -113,6 +118,7 @@ class CerqleMessage {
         localUpload: localUpload ?? this.localUpload,
         senderName: senderName ?? this.senderName,
         sentBy: sentBy ?? this.sentBy,
+        isActivity: isActivity ?? this.isActivity,
         error: clearError ? null : error ?? this.error,
       );
 }

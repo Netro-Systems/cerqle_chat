@@ -10,6 +10,22 @@ import '../../support/support.dart';
 void main() {
   const decoder = WidgetResponseDecoder();
 
+  test('activity marker is decoded and preserved by message updates', () {
+    final result = decoder.refresh(http.Response(
+      jsonEncode(refreshResponse(messages: <Map<String, Object?>>[
+        {...message(id: 1), 'kind': 'activity'},
+        {...message(id: 2), 'kind': 'message'},
+        message(id: 3),
+      ])),
+      200,
+    ));
+
+    expect(result.messages.first.isActivity, isTrue);
+    expect(result.messages.first.copyWith(body: 'Updated').isActivity, isTrue);
+    expect(result.messages[1].isActivity, isFalse);
+    expect(result.messages[2].isActivity, isFalse);
+  });
+
   test('session decoder ignores unknown fields and maps known values', () {
     final result = decoder.session(
       http.Response(

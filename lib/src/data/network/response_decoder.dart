@@ -245,6 +245,7 @@ final class WidgetResponseDecoder {
           ? _stringOrNull(json['agent_name'])
           : null,
       sentBy: sentBy,
+      isActivity: json['kind'] == 'activity',
     );
   }
 

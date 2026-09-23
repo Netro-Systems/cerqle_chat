@@ -1,6 +1,50 @@
 part of 'chat_widgets_test.dart';
 
 void registerPresentationLayoutTests(CerqleConfig config) {
+  testWidgets(
+      'join activity is centered text while regular messages stay bubbles',
+      (tester) async {
+    const body = 'Cerqle_Demo joined the chat';
+    final runtime = _runtime(
+      config,
+      MockClient((_) async => http.Response(
+            jsonEncode(sessionResponse(messages: <Map<String, Object?>>[
+              {...message(id: 1, body: body), 'kind': 'activity'},
+              message(id: 2, body: body),
+            ])),
+            200,
+          )),
+    );
+    await tester.pumpWidget(_app(CerqleChatView(
+      config: config,
+      controller: runtime.controller,
+    )));
+    await tester.pump();
+    await tester.pump();
+
+    final activity = find.byKey(
+      const ValueKey<String>('cerqle-message-activity-server-1'),
+    );
+    expect(activity, findsOneWidget);
+    final text = find.descendant(of: activity, matching: find.byType(Text));
+    expect(text, findsOneWidget);
+    expect(tester.widget<Text>(text).data, body);
+    expect(tester.widget<Text>(text).textAlign, TextAlign.center);
+    expect(find.descendant(of: activity, matching: find.byType(Center)),
+        findsOneWidget);
+    expect(find.descendant(of: activity, matching: find.byType(DecoratedBox)),
+        findsNothing);
+    expect(find.descendant(of: activity, matching: find.byType(Image)),
+        findsNothing);
+    expect(find.byKey(const ValueKey<String>('cerqle-message-bubble-server-1')),
+        findsNothing);
+    expect(find.byKey(const ValueKey<String>('cerqle-message-bubble-server-2')),
+        findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
   testWidgets('full-screen chat can use light status-bar icons',
       (tester) async {
     const lightStatusConfig = CerqleConfig(

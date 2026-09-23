@@ -21,6 +21,21 @@ class _MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (message.isActivity) {
+      return Padding(
+        key: ValueKey<String>('cerqle-message-activity-${message.localId}'),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: Center(
+          child: Text(
+            message.body,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: colors.onSurfaceMuted,
+                ),
+          ),
+        ),
+      );
+    }
     final visitor = message.role == CerqleMessageRole.visitor;
     final deliveryLabel = visitor ? ', ${_deliveryLabel(message.status)}' : '';
     return Semantics(
