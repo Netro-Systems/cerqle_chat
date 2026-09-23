@@ -184,7 +184,7 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
-  testWidgets('header handoff works with a full-width host button theme',
+  testWidgets('handoff banner sits below header and requests human support',
       (tester) async {
     var handoffCalls = 0;
     final handoffReady = Completer<void>();
@@ -234,18 +234,16 @@ void registerComposerHandoffTests(CerqleConfig config) {
     await tester.pump();
 
     expect(tester.takeException(), isNull);
-    expect(find.text('Prefer a person?'), findsNothing);
     final header = find.byKey(const ValueKey<String>('cerqle-chat-header'));
-    expect(
-      find.descendant(of: header, matching: find.text('AI')),
-      findsOneWidget,
-    );
-    expect(find.text('AI'), findsOneWidget);
-    await tester.tap(find.text('AI'));
+    final action = find.text('Talk to an agent');
+    expect(action, findsOneWidget);
+    expect(find.descendant(of: header, matching: action), findsNothing);
+    expect(tester.getTopLeft(action).dy,
+        greaterThanOrEqualTo(tester.getBottomLeft(header).dy));
+    await tester.tap(action);
     await tester.pump();
-    expect(find.text('Connecting…'), findsNothing);
-    expect(find.descendant(of: header, matching: find.byType(ShaderMask)),
-        findsOneWidget);
+    expect(find.text('Requesting human support…'), findsOneWidget);
+    expect(find.text('Talk to an agent'), findsNothing);
     await tester.pump(const Duration(milliseconds: 300));
     expect(tester.takeException(), isNull);
     handoffReady.complete();
@@ -253,11 +251,8 @@ void registerComposerHandoffTests(CerqleConfig config) {
 
     expect(handoffCalls, 1);
     expect(tester.takeException(), isNull);
-    expect(
-      find.descendant(of: header, matching: find.text('Agent')),
-      findsOneWidget,
-    );
-    expect(find.text('AI'), findsNothing);
+    expect(find.text('Connected to a human agent'), findsOneWidget);
+    expect(find.text('Talk to an agent'), findsNothing);
     expect(find.text('Connected to support'), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());

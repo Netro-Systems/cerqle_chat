@@ -225,11 +225,14 @@ class _CerqleChatViewState extends State<CerqleChatView> {
                       state: _state,
                       colors: colors,
                       onClose: widget.onClose,
-                      onRequestHumanAgent: _canCompose(_state)
-                          ? () => unawaited(_controller
-                              .requestHumanAgent()
-                              .catchError((_) {}))
-                          : null,
+                    ),
+                  if (_canCompose(_state) && widget.composerBuilder == null)
+                    _HandoffAction(
+                      state: _state,
+                      colors: colors,
+                      onPressed: () => unawaited(
+                        _controller.requestHumanAgent().catchError((_) {}),
+                      ),
                     ),
                   if (_state.phase == CerqleChatPhase.reconnecting)
                     ChatConnectionBanner(colors: colors),
@@ -374,13 +377,6 @@ class _CerqleChatViewState extends State<CerqleChatView> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            if (!widget.showHeader)
-              _HandoffAction(
-                state: _state,
-                colors: colors,
-                onPressed: () => unawaited(
-                    _controller.requestHumanAgent().catchError((_) {})),
-              ),
             _Composer(
               controller: _controller,
               colors: colors,

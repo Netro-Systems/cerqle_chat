@@ -5,13 +5,11 @@ class _ChatHeader extends StatelessWidget {
     required this.state,
     required this.colors,
     required this.onClose,
-    required this.onRequestHumanAgent,
   });
 
   final CerqleChatState state;
   final CerqleResolvedTheme colors;
   final VoidCallback? onClose;
-  final VoidCallback? onRequestHumanAgent;
 
   @override
   Widget build(BuildContext context) {
@@ -85,13 +83,6 @@ class _ChatHeader extends StatelessWidget {
                   ],
                 ),
               ),
-              if (onRequestHumanAgent != null)
-                _HandoffAction(
-                  state: state,
-                  colors: colors,
-                  onPressed: onRequestHumanAgent!,
-                  compact: true,
-                ),
               if (onClose != null)
                 IconButton(
                   tooltip: 'Close chat',
