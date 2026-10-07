@@ -38,6 +38,87 @@ void registerLauncherTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
+  testWidgets('launcher displays a customizable unread count badge',
+      (tester) async {
+    final runtime = _runtime(
+      config,
+      MockClient((request) async {
+        if (request.url.path.endsWith('/session')) {
+          return http.Response(
+            jsonEncode(
+              sessionResponse(
+                messages: <Map<String, Object?>>[
+                  message(id: 1, role: 'agent', body: 'Can we help?'),
+                ],
+              ),
+            ),
+            200,
+          );
+        }
+        throw StateError('Unexpected request: ${request.url}');
+      }),
+    );
+
+    await tester.pumpWidget(_app(CerqleChatLauncher(
+      config: config,
+      controller: runtime.controller,
+      showBadge: true,
+      badgeShowCount: true,
+      badgeBackgroundColor: Colors.blue,
+      badgeTextColor: Colors.white,
+      badgeLargeSize: 20,
+      badgeOffset: const Offset(3, -3),
+    )));
+    await tester.pumpAndSettle();
+
+    final indicator =
+        find.byKey(const ValueKey<String>('cerqle-unread-indicator'));
+    expect(indicator, findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'1 unread message')), findsOneWidget);
+    final badge = tester.widget<Container>(indicator);
+    expect((badge.decoration! as ShapeDecoration).color, Colors.blue);
+    expect(tester.getSize(indicator).height, 20);
+    expect(find.text('1'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
+  testWidgets('launcher badge is disabled by default', (tester) async {
+    final runtime = _runtime(
+      config,
+      MockClient((request) async {
+        if (request.url.path.endsWith('/session')) {
+          return http.Response(
+            jsonEncode(
+              sessionResponse(
+                messages: <Map<String, Object?>>[
+                  message(id: 1, role: 'agent', body: 'Unread reply'),
+                ],
+              ),
+            ),
+            200,
+          );
+        }
+        throw StateError('Unexpected request: ${request.url}');
+      }),
+    );
+
+    await tester.pumpWidget(_app(CerqleChatLauncher(
+      config: config,
+      controller: runtime.controller,
+    )));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('cerqle-unread-indicator')),
+      findsNothing,
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
   for (final alignment in <Alignment?>[null, Alignment.topLeft]) {
     final alignmentName = alignment == null ? 'server' : 'custom';
     testWidgets('launcher zoom stays fixed with $alignmentName alignment',

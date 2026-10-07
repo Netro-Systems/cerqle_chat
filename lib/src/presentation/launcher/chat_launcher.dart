@@ -9,12 +9,19 @@ import '../facade/cerqle_chat.dart';
 import '../media/remote_image.dart';
 import '../theme/resolved_theme.dart';
 import '../widgets/brand_logo.dart';
+import '../widgets/unread_badge.dart';
 
 /// Builds a custom launcher from controller state and an idempotent open action.
 typedef CerqleLauncherBuilder = Widget Function(
   BuildContext context,
   CerqleChatState state,
   VoidCallback openChat,
+);
+
+/// Builds custom content for an unread badge from the current unread count.
+typedef CerqleBadgeLabelBuilder = Widget Function(
+  BuildContext context,
+  int unreadCount,
 );
 
 /// Floating launcher that initializes chat and opens one presentation per scope.
@@ -30,6 +37,18 @@ class CerqleChatLauncher extends StatefulWidget {
     this.margin,
     this.presentation,
     this.builder,
+    this.showBadge = false,
+    this.badgeShowCount = false,
+    this.badgeMaxCount = 99,
+    this.badgeLabelBuilder,
+    this.badgeBackgroundColor,
+    this.badgeTextColor,
+    this.badgeSmallSize = 14,
+    this.badgeLargeSize,
+    this.badgeTextStyle,
+    this.badgePadding,
+    this.badgeAlignment,
+    this.badgeOffset = const Offset(1, -1),
   });
 
   /// Widget and visitor configuration.
@@ -49,6 +68,42 @@ class CerqleChatLauncher extends StatefulWidget {
 
   /// Optional custom launcher renderer.
   final CerqleLauncherBuilder? builder;
+
+  /// Whether the default launcher displays unread state.
+  final bool showBadge;
+
+  /// Whether the badge displays its unread count instead of a dot.
+  final bool badgeShowCount;
+
+  /// Largest count displayed before the badge uses a plus suffix.
+  final int badgeMaxCount;
+
+  /// Optional custom unread badge label, built from the current count.
+  final CerqleBadgeLabelBuilder? badgeLabelBuilder;
+
+  /// Optional unread badge fill color.
+  final Color? badgeBackgroundColor;
+
+  /// Optional unread badge label color.
+  final Color? badgeTextColor;
+
+  /// Diameter of a dot badge.
+  final double? badgeSmallSize;
+
+  /// Height of a badge with label content.
+  final double? badgeLargeSize;
+
+  /// Optional unread badge label style.
+  final TextStyle? badgeTextStyle;
+
+  /// Padding around overflow or custom unread badge label content.
+  final EdgeInsetsGeometry? badgePadding;
+
+  /// Alignment of the badge relative to the launcher.
+  final AlignmentGeometry? badgeAlignment;
+
+  /// Fine positioning adjustment after alignment.
+  final Offset? badgeOffset;
 
   @override
   State<CerqleChatLauncher> createState() => _CerqleChatLauncherState();
@@ -156,27 +211,48 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
       useApiColors: widget.config.useApiColors,
     );
     const label = 'Open chat';
+    final button = Stack(
+      clipBehavior: Clip.none,
+      children: <Widget>[
+        Positioned.fill(
+          child: FloatingActionButton(
+            heroTag: null,
+            tooltip: label,
+            onPressed: open,
+            backgroundColor: colors.primary,
+            foregroundColor: colors.onPrimary,
+            child: _launcherIcon(_state, colors.launcherSize),
+          ),
+        ),
+      ],
+    );
     return Semantics(
       button: true,
       label: label,
       child: SizedBox.square(
         dimension: colors.launcherSize,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: <Widget>[
-            Positioned.fill(
-              child: FloatingActionButton(
-                heroTag: null,
-                tooltip: label,
-                onPressed: open,
-                backgroundColor: colors.primary,
-                foregroundColor: colors.onPrimary,
-                child: _launcherIcon(_state, colors.launcherSize),
-              ),
-            ),
-          ],
-        ),
+        child: _buildUnreadBadge(colors, button),
       ),
+    );
+  }
+
+  Widget _buildUnreadBadge(CerqleResolvedTheme colors, Widget child) {
+    if (!widget.showBadge) return child;
+    return CerqleUnreadBadgeView(
+      unreadCount: _state.unreadCount,
+      indicatorKey: const ValueKey<String>('cerqle-unread-indicator'),
+      showCount: widget.badgeShowCount,
+      maxCount: widget.badgeMaxCount,
+      labelBuilder: widget.badgeLabelBuilder,
+      backgroundColor: widget.badgeBackgroundColor ?? colors.error,
+      textColor: widget.badgeTextColor,
+      smallSize: widget.badgeSmallSize,
+      largeSize: widget.badgeLargeSize,
+      textStyle: widget.badgeTextStyle,
+      padding: widget.badgePadding,
+      alignment: widget.badgeAlignment,
+      offset: widget.badgeOffset,
+      child: child,
     );
   }
 

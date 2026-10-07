@@ -75,6 +75,52 @@ void registerRealtimeTests(CerqleConfig config) {
     await controller.dispose();
     await client.close();
   });
+  test('realtime agent message remains unread until chat marks it read',
+      () async {
+    final connector = _FakeWidgetRealtimeConnector();
+    var markReadCalls = 0;
+    final httpClient = MockClient((request) async {
+      if (request.url.path.endsWith('/session')) {
+        return http.Response(
+          jsonEncode(sessionResponse(realtimeKey: 'pusher-key')),
+          200,
+        );
+      }
+      if (request.url.path.endsWith('/read')) {
+        markReadCalls++;
+        return http.Response('{"ok":true}', 200);
+      }
+      throw StateError('Unexpected request: ${request.url}');
+    });
+    final client = CerqleClient(
+      config: config,
+      httpClient: httpClient,
+      sessionStore: MemorySessionStore(),
+      realtimeConnector: connector,
+    );
+    final controller = CerqleChatController(client: client);
+    final statesSub = controller.states.listen((_) {});
+    await controller.initialize();
+    await Future<void>.delayed(Duration.zero);
+
+    connector.emitMessageCreated(<String, Object?>{
+      'message': message(id: 9, role: 'agent', body: 'Unread reply'),
+    });
+    await Future<void>.delayed(Duration.zero);
+
+    expect(controller.state.unreadCount, 1);
+    expect(controller.state.hasUnreadMessages, isTrue);
+    expect(markReadCalls, 0);
+
+    await controller.markRead();
+
+    expect(controller.state.unreadCount, 0);
+    expect(markReadCalls, 1);
+
+    await statesSub.cancel();
+    await controller.dispose();
+    await client.close();
+  });
 }
 
 final class _FakeWidgetRealtimeConnector implements WidgetRealtimeConnector {

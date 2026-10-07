@@ -7,6 +7,22 @@ import 'package:cerqle_chat/src/application/services/message_reconciler.dart';
 void main() {
   const reconciler = MessageReconciler();
 
+  test('does not count activities as agent reply notifications', () {
+    final activity =
+        _message(localId: 'join', serverId: 1).copyWith(isActivity: true);
+    final reply = _message(localId: 'reply', serverId: 2);
+    final received = <CerqleMessage>[];
+
+    final merged = reconciler.merge(
+      <CerqleMessage>[],
+      <CerqleMessage>[activity, reply],
+      onNewAgentMessage: received.add,
+    );
+
+    expect(merged, hasLength(2));
+    expect(received, <CerqleMessage>[reply]);
+  });
+
   test('deduplicates by server ID and preserves the existing local ID', () {
     final upload = CerqleUpload(
       bytes: Uint8List.fromList(<int>[1, 2, 3, 4]),
@@ -46,6 +62,20 @@ void main() {
     expect(result.map((message) => message.localId),
         <String>['one', 'two', 'pending']);
     expect(reconciler.greatestServerId(result, fallback: 0), 2);
+  });
+
+  test('does not restore unread status after a message was read', () {
+    final read = _message(localId: 'agent-7', serverId: 7).copyWith(
+      status: CerqleMessageStatus.read,
+    );
+    final stale = _message(localId: 'server-7', serverId: 7).copyWith(
+      status: CerqleMessageStatus.delivered,
+    );
+
+    final result =
+        reconciler.merge(<CerqleMessage>[read], <CerqleMessage>[stale]);
+
+    expect(result.single.status, CerqleMessageStatus.read);
   });
 }
 

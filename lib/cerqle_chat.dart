@@ -23,4 +23,4 @@ export 'src/presentation/view/chat_view.dart'
         CerqleMessageBuilder;
 export 'src/presentation/facade/cerqle_chat.dart' show CerqleChat;
 export 'src/presentation/launcher/chat_launcher.dart'
-    show CerqleChatLauncher, CerqleLauncherBuilder;
+    show CerqleBadgeLabelBuilder, CerqleChatLauncher, CerqleLauncherBuilder;

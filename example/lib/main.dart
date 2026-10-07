@@ -1,8 +1,8 @@
 import 'dart:async';
 
+import 'package:cerqle_chat/cerqle_chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:cerqle_chat/cerqle_chat.dart';
 
 import 'src/theme/example_theme.dart';
 import 'src/widgets/example_brand_header.dart';
@@ -15,17 +15,14 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
   final widgetKey = dotenv.get('CERQLE_WIDGET_KEY').trim();
-  final configuredOneSignalAppId =
-      dotenv.maybeGet('CERQLE_ONESIGNAL_APP_ID')?.trim();
+  final configuredOneSignalAppId = dotenv.maybeGet('CERQLE_ONESIGNAL_APP_ID')?.trim();
   final config = CerqleConfig(
     widgetKey: widgetKey,
     requireNotificationPermission: true,
     lightStatusBarIcons: true,
-    apiBaseUrl:
-        dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://yourdomain.com',
-    oneSignalAppId: configuredOneSignalAppId?.isNotEmpty == true
-        ? configuredOneSignalAppId!
-        : CerqleConfig.defaultOneSignalAppId,
+    apiBaseUrl: dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://yourdomain.com',
+    oneSignalAppId:
+        configuredOneSignalAppId?.isNotEmpty == true ? configuredOneSignalAppId! : CerqleConfig.defaultOneSignalAppId,
     user: const CerqleUser(
       name: 'Demo Visitor',
       email: 'visitor@demo.com',
@@ -86,6 +83,26 @@ class ExampleHome extends StatelessWidget {
             preferredSize: Size.fromHeight(1),
             child: Divider(height: 1, color: cerqleBorder),
           ),
+          actions: [
+            CerqleChat.badge(
+              config: config,
+              showCount: true,
+              largeSize: 18,
+              backgroundColor: Color( 0xFFFF0000),
+              textStyle: TextStyle(fontSize: 10),
+              offset: Offset(-6, 6),
+              child: IconButton(
+                iconSize: 26,
+                icon: const Icon(Icons.message),
+                onPressed: () async {
+                  await CerqleChat.open(
+                    context,
+                    config: config,
+                  );
+                },
+              ),
+            )
+          ],
         ),
         body: DecoratedBox(
           decoration: const BoxDecoration(
@@ -150,7 +167,14 @@ class ExampleHome extends StatelessWidget {
             ),
           ),
         ),
-        floatingActionButton: CerqleChatLauncher(config: config),
+        floatingActionButton: CerqleChatLauncher(
+          config: config,
+          showBadge: true,
+          badgeShowCount: true,
+          badgeBackgroundColor: Color(0xFFFF0000),
+          badgeLargeSize: 20,
+          badgeOffset: Offset(4, -4),
+        ),
       );
 }
 

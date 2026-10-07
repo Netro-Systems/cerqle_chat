@@ -156,6 +156,49 @@ Widget buildFloatingLauncher(CerqleConfig config) {
 }
 ```
 
+The launcher can display an unread indicator when an agent replies while the
+chat is closed. It keeps listening through the controller's realtime session,
+so the indicator does not depend on push-notification delivery. Opening the
+chat marks the visible replies as read and clears the badge. Enable it with
+`showBadge: true`:
+
+Display a count and customize its appearance when needed:
+
+```dart
+CerqleChatLauncher(
+  config: config,
+  showBadge: true,
+  badgeShowCount: true,
+  badgeMaxCount: 99,
+  badgeBackgroundColor: Colors.red,
+  badgeTextColor: Colors.white,
+  badgeOffset: const Offset(6, -6),
+)
+```
+
+The default is `showBadge: false`. A custom launcher builder can read
+`state.unreadCount` or `state.hasUnreadMessages` directly.
+
+For an application-owned button, keep a controller alive and wrap the button:
+
+```dart
+CerqleChat.badge(
+  config: config,
+  showCount: true,
+  child: IconButton(
+    icon: const Icon(Icons.chat),
+    onPressed: () => CerqleChat.open(
+      context,
+      config: config,
+    ),
+  ),
+)
+```
+
+The badge owns its runtime and releases it when removed from the widget tree.
+Headless chat implementations can still use `state.unreadCount` and call
+`await controller.markRead()` when their conversation UI becomes visible.
+
 ### 5. Embedded View
 Place the chat view directly inside an existing layout, drawer, or split-view:
 
@@ -366,7 +409,7 @@ Future<void> submitLead(CerqleChatController controller) async {
 * **Platform Security**: Visitor tokens are bearer credentials persisted via `CerqleSessionStore` using platform-native secure storage (`flutter_secure_storage`).
 * **Authoritative Confirmation**: Messages transition from `pending` to `sent` only upon server receipt and ID issuance.
 * **Network Failures & Unconfirmed State**: If a request disconnects or times out before receiving a response, the message is marked `unconfirmed` rather than failed, avoiding duplicate message sends.
-* **Realtime Sync**: A private Pusher channel delivers messages, typing changes, and handoff updates while chat is active, and disconnects automatically in the background or when chat is closed. Pull-to-refresh remains available as a user-triggered consistency check, and full initial history is loaded through bounded pagination; neither path runs on a timer.
+* **Realtime Sync**: A private Pusher channel delivers messages, typing changes, handoff updates, and launcher unread state while a controller has listeners. It disconnects in the background, then refreshes missed messages and restores realtime updates when the app resumes. Pull-to-refresh remains available as a user-triggered consistency check, and full initial history is loaded through bounded pagination; neither path runs on a timer.
 * **Safe Diagnostics**: Diagnostic callbacks emit strictly redacted operational telemetry (durations, error codes, HTTP statuses) without logging PII, bearer tokens, or message content.
 
 ---
