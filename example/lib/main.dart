@@ -26,16 +26,6 @@ Future<void> main() async {
     user: const CerqleUser(
       name: 'Demo Visitor',
       email: 'visitor@demo.com',
-      location: CerqleLocation(
-        country: 'Bangladesh',
-        countryCode: 'BD',
-        city: 'Dhaka',
-        region: 'Dhaka Division',
-        latitude: 23.8103,
-        longitude: 90.4125,
-        pageTitle: 'Cerqle Example App',
-        pageUrl: 'cerqle://example',
-      ),
     ),
   );
 

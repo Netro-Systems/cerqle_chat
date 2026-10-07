@@ -34,6 +34,26 @@ void main() {
     });
   });
 
+  test('session body preserves application-defined custom fields', () {
+    final body = encoder.sessionBody(
+      widgetKey: 'widget-key',
+      user: const CerqleUser(
+        customFields: <String, Object>{
+          'plan': 'business',
+          'account_id': 1234,
+        },
+      ),
+      storedSession: null,
+    );
+
+    expect(body['custom_fields'], <String, Object>{
+      'plan': 'business',
+      'account_id': 1234,
+    });
+    expect(body, isNot(contains('page_title')));
+    expect(body, isNot(contains('page_url')));
+  });
+
   test('multipart upload preserves documented fields and attachment name', () {
     final fields = encoder.uploadFields(
       widgetKey: 'widget-key',
