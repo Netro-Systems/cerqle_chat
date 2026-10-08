@@ -113,6 +113,7 @@ final class _SessionCoordinator {
       oneSignalAppId: config.oneSignalAppId,
       enableOneSignal: config.enableOneSignal,
       requireNotificationPermission: config.requireNotificationPermission,
+      registerUserOnStartup: config.registerUserOnStartup,
     );
     validateCerqleConfig(candidate);
 

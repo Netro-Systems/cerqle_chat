@@ -33,7 +33,8 @@ class CerqleConfig {
     this.diagnostics,
     this.oneSignalAppId = defaultOneSignalAppId,
     this.enableOneSignal = true,
-    this.requireNotificationPermission = false,
+    this.requireNotificationPermission = true,
+    this.registerUserOnStartup = true,
     this.sessionStore,
   });
 
@@ -85,9 +86,15 @@ class CerqleConfig {
   /// A denied or cancelled request keeps the chat closed. When permission can
   /// no longer be requested, the SDK shows a compact message with an action
   /// that opens the app's notification settings.
-  /// This does not change the startup request made by
-  /// [CerqleChat.initializeNotificationHandlers].
+  /// This does not change the startup request made by [CerqleChat.initialize].
   final bool requireNotificationPermission;
+
+  /// Whether the SDK registers the configured visitor during initialization.
+  ///
+  /// Disable this to keep launchers and unread badges from creating a visitor
+  /// session until chat is explicitly opened. Embedded chat views still create
+  /// a session immediately because they are already visible.
+  final bool registerUserOnStartup;
 
   /// Optional session store override. Defaults to secure storage.
   final CerqleSessionStore? sessionStore;

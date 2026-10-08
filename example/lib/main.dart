@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:cerqle_chat/cerqle_chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -15,28 +13,27 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await dotenv.load(fileName: '.env');
   final widgetKey = dotenv.get('CERQLE_WIDGET_KEY').trim();
-  final configuredOneSignalAppId = dotenv.maybeGet('CERQLE_ONESIGNAL_APP_ID')?.trim();
+  final configuredOneSignalAppId =
+      dotenv.maybeGet('CERQLE_ONESIGNAL_APP_ID')?.trim();
   final config = CerqleConfig(
     widgetKey: widgetKey,
     requireNotificationPermission: true,
     lightStatusBarIcons: true,
-    apiBaseUrl: dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://yourdomain.com',
-    oneSignalAppId:
-        configuredOneSignalAppId?.isNotEmpty == true ? configuredOneSignalAppId! : CerqleConfig.defaultOneSignalAppId,
+    apiBaseUrl: dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ??
+        'https://yourdomain.com',
+    oneSignalAppId: configuredOneSignalAppId?.isNotEmpty == true
+        ? configuredOneSignalAppId!
+        : CerqleConfig.defaultOneSignalAppId,
     user: const CerqleUser(
       name: 'Demo Visitor',
       email: 'visitor@demo.com',
     ),
   );
 
-  // 1. Initialize push notification handlers
-  CerqleChat.initializeNotificationHandlers(
+  await CerqleChat.initialize(
     config: config,
     navigatorKey: navigatorKey,
   );
-
-  // 2. Register live visitor presence in background
-  unawaited(CerqleChat.registerVisitor(config: config));
 
   runApp(
     ExampleApp(config: config),
@@ -78,7 +75,7 @@ class ExampleHome extends StatelessWidget {
               config: config,
               showCount: true,
               largeSize: 18,
-              backgroundColor: Color( 0xFFFF0000),
+              backgroundColor: Color(0xFFFF0000),
               textStyle: TextStyle(fontSize: 10),
               offset: Offset(-6, 6),
               child: IconButton(

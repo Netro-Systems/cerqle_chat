@@ -259,7 +259,8 @@ Future<void> runHeadlessChat(CerqleConfig config) async {
 | `diagnostics` | `CerqleDiagnosticsCallback?` | `null` | Callback receiving redacted operational metrics and lifecycle events. |
 | `oneSignalAppId` | `String` | `CerqleConfig.defaultOneSignalAppId` | OneSignal App ID used for push notification registration. |
 | `enableOneSignal` | `bool` | `true` | Whether device push notification tokens are registered on session start. |
-| `requireNotificationPermission` | `bool` | `false` | When true, notification permission is required to open a modal chat. Denial keeps chat closed; if the OS prompt is unavailable, a compact message links to notification settings. |
+| `requireNotificationPermission` | `bool` | `true` | When true, notification permission is required to open a modal chat. Denial keeps chat closed; if the OS prompt is unavailable, a compact message links to notification settings. |
+| `registerUserOnStartup` | `bool` | `true` | Whether the SDK registers the configured visitor in the background during initialization. |
 | `sessionStore` | `CerqleSessionStore?` | `null` | Custom session store override (defaults to secure encrypted platform storage). |
 
 ---
@@ -315,7 +316,8 @@ final config = CerqleConfig(
 ### 🔔 Push Notifications
 The SDK provides built-in OneSignal push notification integration so visitors receive notifications when agents reply.
 
-Initialize notification handlers in `main()`:
+Initialize Cerqle once in `main()`. Notification handlers and visitor
+registration are managed internally:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -332,7 +334,7 @@ Future<void> main() async {
     requireNotificationPermission: true,
   );
 
-  CerqleChat.initializeNotificationHandlers(
+  await CerqleChat.initialize(
     config: config,
     navigatorKey: navigatorKey,
   );
@@ -342,6 +344,16 @@ Future<void> main() async {
 ```
 
 When a notification is tapped, the SDK automatically opens the chatbox. Live updates continue through Pusher while the chat is active.
+
+Visitor registration runs automatically by default. Set
+`registerUserOnStartup: false` to skip eager registration during
+`CerqleChat.initialize`. Launchers and custom badges also remain unregistered
+until chat is opened, so API-provided launcher colors and assets are unavailable
+and the launcher uses the local fallback theme before that first open.
+Consequently, an unread badge cannot receive realtime updates before that first
+open because no visitor session exists yet. Set
+`enableOneSignal: false` to disable OneSignal initialization and notification
+handling.
 
 The SDK uses `CerqleConfig.defaultOneSignalAppId` by default. To use a
 different OneSignal application, pass its public app ID through

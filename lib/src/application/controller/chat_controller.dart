@@ -107,7 +107,7 @@ class CerqleChatController with WidgetsBindingObserver {
         }
         // Permission prompting on chat open is controlled by
         // requireNotificationPermission in the presentation facade. Startup
-        // prompting remains controlled by initializeNotificationHandlers.
+        // prompting is handled internally by CerqleChat.initialize.
         deviceId = await _oneSignalService.currentPushToken(
           requestPermission: false,
         );

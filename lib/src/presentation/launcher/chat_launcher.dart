@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../application/cerqle_runtime.dart';
 import '../../configuration/cerqle_config.dart';
@@ -8,6 +9,7 @@ import '../../domain/models/models.dart';
 import '../facade/cerqle_chat.dart';
 import '../media/remote_image.dart';
 import '../theme/resolved_theme.dart';
+import '../unread_controller_registry.dart';
 import '../widgets/brand_logo.dart';
 import '../widgets/unread_badge.dart';
 
@@ -111,6 +113,7 @@ class CerqleChatLauncher extends StatefulWidget {
 
 class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
   late CerqleChatController _controller;
+  late String _unreadScope;
   CerqleClient? _ownedClient;
   StreamSubscription<CerqleChatState>? _subscription;
   late CerqleChatState _state;
@@ -127,11 +130,27 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
     } else {
       _controller = supplied;
     }
+    _unreadScope = UnreadControllerRegistry.register(
+      config: widget.config,
+      controller: _controller,
+    );
     _state = _controller.state;
-    _subscription = _controller.states.listen((state) {
-      if (mounted) setState(() => _state = state);
-    });
-    unawaited(_controller.initialize().catchError((_) {}));
+    _subscription = _controller.states.listen(_onState);
+    if (widget.config.registerUserOnStartup) {
+      unawaited(_controller.initialize().catchError((_) {}));
+    }
+  }
+
+  void _onState(CerqleChatState state) {
+    if (!mounted) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _state = state);
+      });
+      return;
+    }
+    setState(() => _state = state);
   }
 
   @override
@@ -141,10 +160,13 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
     if (custom != null) return custom(context, _state, open);
 
     final isConfigurationLoaded = _state.widget != null;
+    final canRenderBeforeRegistration = !widget.config.registerUserOnStartup &&
+        _state.phase == CerqleChatPhase.idle;
+    final shouldRender = isConfigurationLoaded || canRenderBeforeRegistration;
     final reduceMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (reduceMotion) {
-      if (!isConfigurationLoaded) return const SizedBox.shrink();
+      if (!shouldRender) return const SizedBox.shrink();
       return _buildPositionedLauncher(
         context,
         child: _buildDefaultLauncherButton(context, open),
@@ -157,7 +179,7 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
         key: const ValueKey<String>('cerqle-launcher-transition'),
         duration: const Duration(milliseconds: 140),
         transitionBuilder: _buildZoomTransition,
-        child: isConfigurationLoaded
+        child: shouldRender
             ? KeyedSubtree(
                 key: const ValueKey<String>('cerqle-launcher-loaded'),
                 child: _buildDefaultLauncherButton(context, open),
@@ -270,8 +292,9 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
     );
   }
 
-  Widget _builtInLauncherLogo() =>
-      const CerqleBrandLogo(imageKey: ValueKey<String>('cerqle-launcher-logo'));
+  Widget _builtInLauncherLogo() => const CerqleBrandLogo.launcher(
+        imageKey: ValueKey<String>('cerqle-launcher-logo'),
+      );
 
   Alignment _serverAlignment(CerqleChatState state) =>
       state.widget?.launcherPosition == CerqleLauncherPosition.bottomLeft
@@ -296,6 +319,7 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
   @override
   void dispose() {
     unawaited(_subscription?.cancel());
+    UnreadControllerRegistry.unregister(_unreadScope, _controller);
     final client = _ownedClient;
     if (client != null) {
       unawaited(_controller.dispose().then((_) => client.close()));

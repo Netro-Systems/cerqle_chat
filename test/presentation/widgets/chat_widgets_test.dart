@@ -23,6 +23,7 @@ void main() {
     widgetKey: 'test-widget',
     apiBaseUrl: 'https://chat.example.com',
     enableOneSignal: false,
+    requireNotificationPermission: false,
   );
 
   registerViewStateTests(config);

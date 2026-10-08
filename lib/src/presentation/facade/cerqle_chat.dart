@@ -11,6 +11,7 @@ import '../../domain/errors/cerqle_exception.dart';
 import '../../domain/events/chat_event.dart';
 import '../../domain/models/models.dart';
 import '../screen/chat_screen.dart';
+import '../unread_controller_registry.dart';
 import '../view/chat_view.dart';
 import '../widgets/unread_badge.dart';
 
@@ -20,8 +21,8 @@ abstract final class CerqleChat {
       <String, Future<CerqleChatResult?>>{};
   static final Map<String, CerqleChatController> _ownedControllers =
       <String, CerqleChatController>{};
-  static final Map<String, Set<CerqleChatController>> _badgeControllers =
-      <String, Set<CerqleChatController>>{};
+  static final Map<String, Future<void>> _startupRegistrations =
+      <String, Future<void>>{};
   static StreamSubscription<Map<String, dynamic>>?
       _notificationClickSubscription;
   static void Function(Map<String, dynamic> payload)? _onNotificationTapped;
@@ -29,55 +30,68 @@ abstract final class CerqleChat {
   static CerqleConfig? _lastConfig;
   static GlobalKey<NavigatorState>? _navigatorKey;
 
-  /// Initializes OneSignal push notification handlers for visitor chat.
+  /// Initializes the Cerqle runtime for the host application.
   ///
-  /// Call this in your host app's `main()` or splash screen:
+  /// Notification handling is configured internally. Visitor registration is
+  /// also automatic unless [CerqleConfig.registerUserOnStartup] is false.
   /// ```dart
-  /// CerqleChat.initializeNotificationHandlers(
+  /// await CerqleChat.initialize(
   ///   config: config,
   ///   navigatorKey: navigatorKey,
   /// );
   /// ```
-  static void initializeNotificationHandlers({
-    CerqleConfig? config,
+  static Future<void> initialize({
+    required CerqleConfig config,
     GlobalKey<NavigatorState>? navigatorKey,
     void Function(Map<String, dynamic> payload)? onNotificationTapped,
-  }) {
-    if (config != null) _lastConfig = config;
+  }) async {
+    validateCerqleRuntimeConfig(config);
+    _lastConfig = config;
     if (navigatorKey != null) _navigatorKey = navigatorKey;
     if (onNotificationTapped != null) {
       _onNotificationTapped = onNotificationTapped;
     }
 
-    final appId = config?.oneSignalAppId ?? CerqleConfig.defaultOneSignalAppId;
-    WidgetOneSignalService.instance.initialize(appId: appId);
-    if (config?.enableOneSignal != false) {
-      WidgetOneSignalService.instance.requestPermission();
+    await _initializeNotificationHandlers(config);
+    if (config.registerUserOnStartup) {
+      _scheduleStartupRegistration(config);
     }
+    _schedulePendingNotificationOpen();
+  }
 
-    _notificationClickSubscription?.cancel();
+  static Future<void> _initializeNotificationHandlers(
+    CerqleConfig config,
+  ) async {
+    await _notificationClickSubscription?.cancel();
+    _notificationClickSubscription = null;
+    if (!config.enableOneSignal || config.oneSignalAppId.trim().isEmpty) return;
+
+    await WidgetOneSignalService.instance.initialize(
+      appId: config.oneSignalAppId,
+    );
+    await WidgetOneSignalService.instance.requestPermission();
     _notificationClickSubscription = WidgetOneSignalService
         .instance.notificationClicks
         .listen(_handleNotificationClick);
   }
 
-  /// Registers visitor presence in the background on the Cerqle Hub server.
-  ///
-  /// Call this when your app launches or visitor context changes:
-  /// ```dart
-  /// await CerqleChat.registerVisitor(config: config);
-  /// ```
-  static Future<void> registerVisitor({
-    required CerqleConfig config,
-    String? deviceId,
-  }) async {
-    validateCerqleRuntimeConfig(config);
+  static void _scheduleStartupRegistration(CerqleConfig config) {
+    final scope = cerqlePresentationScope(config);
+    if (_startupRegistrations.containsKey(scope)) return;
+    final registration = _registerUser(config);
+    _startupRegistrations[scope] = registration;
+    unawaited(registration);
+  }
+
+  static Future<void> _registerUser(CerqleConfig config) async {
     final client = CerqleClient(config: config);
+    final controller = CerqleChatController(client: client);
     try {
-      await client.registerVisitorPresence(deviceId: deviceId);
+      await controller.initialize();
     } catch (_) {
-      // Fail silently for background presence registration
+      // Startup registration is best-effort and must not block the host app.
     } finally {
+      await controller.dispose();
       await client.close();
     }
   }
@@ -171,12 +185,15 @@ abstract final class CerqleChat {
     CerqlePresentation? presentation,
   }) {
     validateCerqleRuntimeConfig(config);
+    _lastConfig = config;
     final scope = cerqlePresentationScope(config);
     final active = _activePresentations[scope];
     if (active != null) return active;
 
-    if (controller != null &&
-        cerqlePresentationScope(controller.config) != scope) {
+    final effectiveController =
+        controller ?? UnreadControllerRegistry.first(scope);
+    if (effectiveController != null &&
+        cerqlePresentationScope(effectiveController.config) != scope) {
       throw const CerqleException(
         code: CerqleErrorCode.configuration,
         message:
@@ -192,7 +209,7 @@ abstract final class CerqleChat {
         context,
         scope: scope,
         config: config,
-        suppliedController: controller,
+        suppliedController: effectiveController,
         presentation: presentation ?? config.presentation,
       )
           .then(completer.complete, onError: completer.completeError)
@@ -229,7 +246,7 @@ abstract final class CerqleChat {
       return const CerqleChatResult(reason: CerqleChatCloseReason.userClosed);
     }
 
-    _markBadgeControllersRead(scope);
+    UnreadControllerRegistry.markRead(scope);
 
     CerqleClient? ownedClient;
     final controller = suppliedController ??
@@ -382,36 +399,13 @@ abstract final class CerqleChat {
         child: child,
       );
 
-  static void _registerBadgeController(
-    String scope,
-    CerqleChatController controller,
-  ) {
-    (_badgeControllers[scope] ??= <CerqleChatController>{}).add(controller);
-  }
-
-  static void _unregisterBadgeController(
-    String scope,
-    CerqleChatController controller,
-  ) {
-    final controllers = _badgeControllers[scope];
-    controllers?.remove(controller);
-    if (controllers?.isEmpty == true) _badgeControllers.remove(scope);
-  }
-
-  static void _markBadgeControllersRead(String scope) {
-    final controllers = _badgeControllers[scope];
-    if (controllers == null) return;
-    for (final controller in List<CerqleChatController>.of(controllers)) {
-      unawaited(controller.markRead().catchError((_) {}));
-    }
-  }
-
   /// Deletes credentials for [config] and resets any facade-owned controller.
   ///
   /// Throws [CerqleException] when configuration or secure storage fails.
   static Future<void> resetSession({required CerqleConfig config}) async {
     validateCerqleRuntimeConfig(config);
     final scope = cerqlePresentationScope(config);
+    _startupRegistrations.remove(scope);
     final active = _ownedControllers[scope];
     if (active != null) {
       await active.resetSession();
@@ -482,22 +476,26 @@ class _CerqleUnreadBadgeState extends State<_CerqleUnreadBadge> {
 
   void _attachRuntime() {
     validateCerqleRuntimeConfig(widget.config);
-    _scope = cerqlePresentationScope(widget.config);
     _client = CerqleClient(config: widget.config);
     _controller = CerqleChatController(client: _client);
-    CerqleChat._registerBadgeController(_scope, _controller);
+    _scope = UnreadControllerRegistry.register(
+      config: widget.config,
+      controller: _controller,
+    );
     _unreadCount = _controller.state.unreadCount;
     _subscription = _controller.states.listen((state) {
       if (mounted && state.unreadCount != _unreadCount) {
         setState(() => _unreadCount = state.unreadCount);
       }
     });
-    unawaited(_controller.initialize().catchError((_) {}));
+    if (widget.config.registerUserOnStartup) {
+      unawaited(_controller.initialize().catchError((_) {}));
+    }
   }
 
   Future<void> _replaceRuntime() async {
     await _subscription?.cancel();
-    CerqleChat._unregisterBadgeController(_scope, _controller);
+    UnreadControllerRegistry.unregister(_scope, _controller);
     await _controller.dispose();
     await _client.close();
     if (!mounted) return;
@@ -526,7 +524,7 @@ class _CerqleUnreadBadgeState extends State<_CerqleUnreadBadge> {
   @override
   void dispose() {
     unawaited(_subscription?.cancel());
-    CerqleChat._unregisterBadgeController(_scope, _controller);
+    UnreadControllerRegistry.unregister(_scope, _controller);
     unawaited(_controller.dispose().then((_) => _client.close()));
     super.dispose();
   }
