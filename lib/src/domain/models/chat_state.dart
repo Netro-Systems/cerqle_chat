@@ -74,6 +74,22 @@ class CerqleChatState {
   /// Number of pending or unconfirmed visitor messages.
   final int pendingCount;
 
+  /// Number of unread, non-activity messages sent by an agent.
+  ///
+  /// Messages remain unread until a prebuilt chat view becomes visible or a
+  /// headless integration calls [CerqleChatController.markRead].
+  int get unreadCount => messages
+      .where(
+        (message) =>
+            message.role == CerqleMessageRole.agent &&
+            !message.isActivity &&
+            message.status != CerqleMessageStatus.read,
+      )
+      .length;
+
+  /// Whether at least one unread agent message is available.
+  bool get hasUnreadMessages => unreadCount > 0;
+
   /// Current recoverable or terminal error.
   final CerqleException? error;
 

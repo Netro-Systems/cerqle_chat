@@ -13,8 +13,14 @@ void main() {
     expect(controller.config, same(config));
     expect(config.oneSignalAppId, CerqleConfig.defaultOneSignalAppId);
     expect(config.enableOneSignal, isTrue);
-    expect(config.requireNotificationPermission, isFalse);
-    expect(WidgetOneSignalService.instance, isNotNull);
+    expect(config.requireNotificationPermission, isTrue);
+    expect(config.registerUserOnStartup, isTrue);
+
+    const deferredRegistration = CerqleConfig(
+      widgetKey: 'deferred-widget-key',
+      registerUserOnStartup: false,
+    );
+    expect(deferredRegistration.registerUserOnStartup, isFalse);
 
     controller.dispose();
     client.close();

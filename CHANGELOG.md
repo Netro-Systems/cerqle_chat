@@ -1,5 +1,64 @@
 # Changelog
 
+## 0.1.3 - 2026-10-08
+
+### Added
+
+- Added configurable unread indicators to `CerqleChatLauncher` and the new
+  `CerqleChat.badge(...)` wrapper for host-owned buttons.
+- Added `CerqleChatState.unreadCount`, `hasUnreadMessages`, and
+  `CerqleChatController.markRead()` for custom and headless integrations.
+- Added automatic HTTP(S) and `www.` link detection in sent and received text
+  messages. Links are styled in blue and open in the external browser.
+- Added `CerqleConfig.registerUserOnStartup` to allow explicit deferred visitor
+  registration when API branding, realtime unread state, and startup presence
+  are not required.
+
+### Changed
+
+- Replaced separate notification-handler and visitor-registration setup with
+  the asynchronous `CerqleChat.initialize(...)` entry point.
+- Visitor registration now runs automatically during initialization by default.
+- `CerqleConfig.requireNotificationPermission` now defaults to `true`.
+- Launcher and host-owned badge controllers now share read-state coordination;
+  opening chat from any entry point clears every badge in the same scope.
+- Realtime message reconciliation preserves unread state until the conversation
+  is actually shown.
+
+### Fixed
+
+- Fixed the initial launcher fallback logo rendering with an opaque inner square.
+- Fixed the launcher initially using a local fallback color in the example by
+  loading API widget configuration during startup.
+- Fixed FAB unread badges remaining visible after chat was opened from another
+  application entry point.
+
+### Removed
+
+- Removed `CerqleChat.initializeNotificationHandlers(...)` and
+  `CerqleChat.registerVisitor(...)`; call `await CerqleChat.initialize(...)`
+  instead.
+- Removed the public `WidgetOneSignalService` export. Push setup is now managed
+  internally by `CerqleChat.initialize(...)`.
+- Removed `CerqleLocation` and `CerqleUser.location`. Supply any application-
+  specific metadata through `CerqleUser.customFields` instead.
+
+### Migration
+
+```dart
+await CerqleChat.initialize(
+  config: config,
+  navigatorKey: navigatorKey,
+);
+```
+
+Remove calls to `initializeNotificationHandlers` and `registerVisitor`. If the
+old behavior intentionally avoided startup registration, set
+`registerUserOnStartup: false`; note that API launcher branding and realtime
+unread counts then remain unavailable until chat is opened. Applications that
+do not want notification permission to gate modal chat must now explicitly set
+`requireNotificationPermission: false`.
+
 ## 0.1.2 - 2026-09-23
 
 ### Added

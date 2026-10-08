@@ -6,6 +6,7 @@ import 'dart:typed_data';
 import 'package:app_settings/app_settings.dart';
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
@@ -140,7 +141,16 @@ class _CerqleChatViewState extends State<CerqleChatView> {
     }
     _state = _controller.state;
     _subscription = _controller.states.listen(_onState);
-    unawaited(_controller.initialize().catchError((_) {}));
+    unawaited(_initializeVisibleChat());
+  }
+
+  Future<void> _initializeVisibleChat() async {
+    try {
+      await _controller.initialize();
+      await _controller.markRead();
+    } on Object {
+      // Initialization failures are represented by controller state.
+    }
   }
 
   Future<void> _replaceRuntime() async {
@@ -163,6 +173,9 @@ class _CerqleChatViewState extends State<CerqleChatView> {
         next.messages.isNotEmpty &&
         next.messages.last.role == CerqleMessageRole.visitor;
     setState(() => _state = next);
+    if (next.hasUnreadMessages) {
+      unawaited(_controller.markRead().catchError((_) {}));
+    }
     if (grew && (_nearBottom || sentByVisitor)) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToEnd());
     }

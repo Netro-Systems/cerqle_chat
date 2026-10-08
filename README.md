@@ -30,7 +30,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  cerqle_chat: ^0.1.2
+  cerqle_chat: ^0.1.3
 ```
 
 Or run:
@@ -70,17 +70,30 @@ access shows a Settings snackbar. Permission is checked again on every attempt.
 
 ## Quick Start
 
-Open a functional chat interface with just a few lines of code using your public **Widget Key**:
+Create one configuration and initialize Cerqle before `runApp` so push handling,
+API branding, visitor registration, and realtime unread state are ready:
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:cerqle_chat/cerqle_chat.dart';
 
-void openSupportChat(BuildContext context) async {
-  final config = CerqleConfig(widgetKey: 'YOUR_WIDGET_KEY');
-  await CerqleChat.open(context, config: config);
+final navigatorKey = GlobalKey<NavigatorState>();
+const config = CerqleConfig(widgetKey: 'YOUR_WIDGET_KEY');
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await CerqleChat.initialize(
+    config: config,
+    navigatorKey: navigatorKey,
+  );
+  runApp(MaterialApp(navigatorKey: navigatorKey, home: const MyHomePage()));
 }
 ```
+
+Open chat from any widget with
+`await CerqleChat.open(context, config: config)`, or use one of the integration
+surfaces below. If push handling and pre-open unread state are unnecessary,
+direct `CerqleChat.open(...)` usage remains supported.
 
 > [!NOTE]
 > The `widgetKey` is a public routing identifier, not a secret. Never bundle Cerqle management credentials or widget secret keys in client applications.
@@ -156,6 +169,50 @@ Widget buildFloatingLauncher(CerqleConfig config) {
 }
 ```
 
+The launcher can display an unread indicator when an agent replies while the
+chat is closed. It keeps listening through the controller's realtime session,
+so the indicator does not depend on push-notification delivery. Opening the
+chat from the launcher or another entry point marks the visible replies as read
+and clears every registered badge for the same configuration. Enable it with
+`showBadge: true`:
+
+Display a count and customize its appearance when needed:
+
+```dart
+CerqleChatLauncher(
+  config: config,
+  showBadge: true,
+  badgeShowCount: true,
+  badgeMaxCount: 99,
+  badgeBackgroundColor: Colors.red,
+  badgeTextColor: Colors.white,
+  badgeOffset: const Offset(6, -6),
+)
+```
+
+The default is `showBadge: false`. A custom launcher builder can read
+`state.unreadCount` or `state.hasUnreadMessages` directly.
+
+For an application-owned button, keep a controller alive and wrap the button:
+
+```dart
+CerqleChat.badge(
+  config: config,
+  showCount: true,
+  child: IconButton(
+    icon: const Icon(Icons.chat),
+    onPressed: () => CerqleChat.open(
+      context,
+      config: config,
+    ),
+  ),
+)
+```
+
+The badge owns its runtime and releases it when removed from the widget tree.
+Headless chat implementations can still use `state.unreadCount` and call
+`await controller.markRead()` when their conversation UI becomes visible.
+
 ### 5. Embedded View
 Place the chat view directly inside an existing layout, drawer, or split-view:
 
@@ -216,7 +273,8 @@ Future<void> runHeadlessChat(CerqleConfig config) async {
 | `diagnostics` | `CerqleDiagnosticsCallback?` | `null` | Callback receiving redacted operational metrics and lifecycle events. |
 | `oneSignalAppId` | `String` | `CerqleConfig.defaultOneSignalAppId` | OneSignal App ID used for push notification registration. |
 | `enableOneSignal` | `bool` | `true` | Whether device push notification tokens are registered on session start. |
-| `requireNotificationPermission` | `bool` | `false` | When true, notification permission is required to open a modal chat. Denial keeps chat closed; if the OS prompt is unavailable, a compact message links to notification settings. |
+| `requireNotificationPermission` | `bool` | `true` | When true, notification permission is required to open a modal chat. Denial keeps chat closed; if the OS prompt is unavailable, a compact message links to notification settings. |
+| `registerUserOnStartup` | `bool` | `true` | Whether initialization registers the visitor and loads API branding/realtime unread state before first open. When false, launchers use local fallback branding until chat opens. |
 | `sessionStore` | `CerqleSessionStore?` | `null` | Custom session store override (defaults to secure encrypted platform storage). |
 
 ---
@@ -272,7 +330,8 @@ final config = CerqleConfig(
 ### 🔔 Push Notifications
 The SDK provides built-in OneSignal push notification integration so visitors receive notifications when agents reply.
 
-Initialize notification handlers in `main()`:
+Initialize Cerqle once in `main()`. Notification handlers and visitor
+registration are managed internally:
 
 ```dart
 import 'package:flutter/material.dart';
@@ -289,7 +348,7 @@ Future<void> main() async {
     requireNotificationPermission: true,
   );
 
-  CerqleChat.initializeNotificationHandlers(
+  await CerqleChat.initialize(
     config: config,
     navigatorKey: navigatorKey,
   );
@@ -299,6 +358,16 @@ Future<void> main() async {
 ```
 
 When a notification is tapped, the SDK automatically opens the chatbox. Live updates continue through Pusher while the chat is active.
+
+Visitor registration runs automatically by default. Set
+`registerUserOnStartup: false` to skip eager registration during
+`CerqleChat.initialize`. Launchers and custom badges also remain unregistered
+until chat is opened, so API-provided launcher colors and assets are unavailable
+and the launcher uses the local fallback theme before that first open.
+Consequently, an unread badge cannot receive realtime updates before that first
+open because no visitor session exists yet. Set
+`enableOneSignal: false` to disable OneSignal initialization and notification
+handling.
 
 The SDK uses `CerqleConfig.defaultOneSignalAppId` by default. To use a
 different OneSignal application, pass its public app ID through
@@ -330,6 +399,14 @@ pass it through `mediaAdapter`. This replaces the SDK default.
 Native voice-message playback and previews use temporary audio files with
 format detection, which are cleaned up when the player closes. Web uses data-URI
 playback.
+
+### 🔗 Clickable Message Links
+
+Sent and received text messages automatically recognize `http://`, `https://`,
+and `www.` links. Link text is blue and underlined, remains selectable with the
+rest of the message, and opens in the platform's external browser. A leading
+scheme is added as `https://` for `www.` links, while sentence punctuation is
+kept outside the destination URL.
 
 ---
 
@@ -366,7 +443,7 @@ Future<void> submitLead(CerqleChatController controller) async {
 * **Platform Security**: Visitor tokens are bearer credentials persisted via `CerqleSessionStore` using platform-native secure storage (`flutter_secure_storage`).
 * **Authoritative Confirmation**: Messages transition from `pending` to `sent` only upon server receipt and ID issuance.
 * **Network Failures & Unconfirmed State**: If a request disconnects or times out before receiving a response, the message is marked `unconfirmed` rather than failed, avoiding duplicate message sends.
-* **Realtime Sync**: A private Pusher channel delivers messages, typing changes, and handoff updates while chat is active, and disconnects automatically in the background or when chat is closed. Pull-to-refresh remains available as a user-triggered consistency check, and full initial history is loaded through bounded pagination; neither path runs on a timer.
+* **Realtime Sync**: A private Pusher channel delivers messages, typing changes, handoff updates, and launcher unread state while a controller has listeners. It disconnects in the background, then refreshes missed messages and restores realtime updates when the app resumes. Pull-to-refresh remains available as a user-triggered consistency check, and full initial history is loaded through bounded pagination; neither path runs on a timer.
 * **Safe Diagnostics**: Diagnostic callbacks emit strictly redacted operational telemetry (durations, error codes, HTTP statuses) without logging PII, bearer tokens, or message content.
 
 ---

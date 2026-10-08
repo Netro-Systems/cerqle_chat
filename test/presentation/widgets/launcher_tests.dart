@@ -1,6 +1,63 @@
 part of 'chat_widgets_test.dart';
 
 void registerLauncherTests(CerqleConfig config) {
+  testWidgets('disabled startup registration keeps launcher idle',
+      (tester) async {
+    var sessionRequests = 0;
+    const deferredConfig = CerqleConfig(
+      widgetKey: 'test-widget',
+      apiBaseUrl: 'https://chat.example.com',
+      enableOneSignal: false,
+      requireNotificationPermission: false,
+      registerUserOnStartup: false,
+    );
+    final runtime = _runtime(
+      deferredConfig,
+      MockClient((request) async {
+        if (request.url.path.endsWith('/session')) {
+          sessionRequests++;
+          return http.Response(jsonEncode(sessionResponse()), 200);
+        }
+        return http.Response('{}', 200);
+      }),
+    );
+
+    await tester.pumpWidget(_app(CerqleChatLauncher(
+      config: deferredConfig,
+      controller: runtime.controller,
+    )));
+    await tester.pumpAndSettle();
+
+    expect(sessionRequests, 0);
+    expect(find.bySemanticsLabel('Open chat'), findsOneWidget);
+    final initialLogo = tester.widget<SvgPicture>(
+      find.byKey(const ValueKey<String>('cerqle-launcher-logo')),
+    );
+    final initialLogoAsset = initialLogo.bytesLoader as SvgAssetLoader;
+    expect(
+      initialLogoAsset.colorMapper!.substitute(
+        null,
+        'rect',
+        'fill',
+        const Color(0xFF9B5FA8),
+      ),
+      Colors.transparent,
+    );
+
+    tester
+        .widget<FloatingActionButton>(find.byType(FloatingActionButton))
+        .onPressed!();
+    await tester.pumpAndSettle();
+
+    expect(sessionRequests, 1);
+    expect(find.byType(CerqleChatScreen), findsOneWidget);
+
+    Navigator.of(tester.element(find.byType(CerqleChatScreen))).pop();
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
   testWidgets('launcher has an accessible 48dp target and server alignment',
       (tester) async {
     final runtime = _runtime(
@@ -33,6 +90,168 @@ void registerLauncherTests(CerqleConfig config) {
     final logoAsset = logo.bytesLoader as SvgAssetLoader;
     expect(logoAsset.assetName, 'assets/images/cerqle-icon-purple-bg.svg');
     expect(logoAsset.packageName, 'cerqle_chat');
+    expect(logoAsset.colorMapper, isNotNull);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
+  testWidgets('launcher displays a customizable unread count badge',
+      (tester) async {
+    final runtime = _runtime(
+      config,
+      MockClient((request) async {
+        if (request.url.path.endsWith('/session')) {
+          return http.Response(
+            jsonEncode(
+              sessionResponse(
+                messages: <Map<String, Object?>>[
+                  message(id: 1, role: 'agent', body: 'Can we help?'),
+                ],
+              ),
+            ),
+            200,
+          );
+        }
+        throw StateError('Unexpected request: ${request.url}');
+      }),
+    );
+
+    await tester.pumpWidget(_app(CerqleChatLauncher(
+      config: config,
+      controller: runtime.controller,
+      showBadge: true,
+      badgeShowCount: true,
+      badgeBackgroundColor: Colors.blue,
+      badgeTextColor: Colors.white,
+      badgeLargeSize: 20,
+      badgeOffset: const Offset(3, -3),
+    )));
+    await tester.pumpAndSettle();
+
+    final indicator =
+        find.byKey(const ValueKey<String>('cerqle-unread-indicator'));
+    expect(indicator, findsOneWidget);
+    expect(find.bySemanticsLabel(RegExp(r'1 unread message')), findsOneWidget);
+    final badge = tester.widget<Container>(indicator);
+    expect((badge.decoration! as ShapeDecoration).color, Colors.blue);
+    expect(tester.getSize(indicator).height, 20);
+    expect(find.text('1'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
+  testWidgets('opening from another entry point clears every launcher badge',
+      (tester) async {
+    var markReadCalls = 0;
+    MockClient client() => MockClient((request) async {
+          if (request.url.path.endsWith('/session')) {
+            return http.Response(
+              jsonEncode(
+                sessionResponse(
+                  messages: <Map<String, Object?>>[
+                    message(id: 1, role: 'agent', body: 'Unread reply'),
+                  ],
+                ),
+              ),
+              200,
+            );
+          }
+          if (request.url.path.endsWith('/read')) {
+            markReadCalls++;
+            return http.Response('{}', 200);
+          }
+          throw StateError('Unexpected request: ${request.url}');
+        });
+
+    final firstRuntime = _runtime(config, client());
+    final secondRuntime = _runtime(config, client());
+
+    await tester.pumpWidget(_app(
+      Builder(
+        builder: (context) => Stack(
+          children: <Widget>[
+            ElevatedButton(
+              key: const ValueKey<String>('alternate-chat-entry'),
+              onPressed: () => unawaited(
+                CerqleChat.open(context, config: config),
+              ),
+              child: const Text('Open from app bar'),
+            ),
+            CerqleChatLauncher(
+              config: config,
+              controller: firstRuntime.controller,
+              showBadge: true,
+            ),
+            CerqleChatLauncher(
+              config: config,
+              controller: secondRuntime.controller,
+              showBadge: true,
+            ),
+          ],
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('cerqle-unread-indicator')),
+      findsNWidgets(2),
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey<String>('alternate-chat-entry')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(firstRuntime.controller.state.unreadCount, 0);
+    expect(secondRuntime.controller.state.unreadCount, 0);
+    expect(markReadCalls, 2);
+
+    Navigator.of(tester.element(find.byType(CerqleChatScreen))).pop();
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('cerqle-unread-indicator')),
+      findsNothing,
+    );
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await firstRuntime.dispose();
+    await secondRuntime.dispose();
+  });
+
+  testWidgets('launcher badge is disabled by default', (tester) async {
+    final runtime = _runtime(
+      config,
+      MockClient((request) async {
+        if (request.url.path.endsWith('/session')) {
+          return http.Response(
+            jsonEncode(
+              sessionResponse(
+                messages: <Map<String, Object?>>[
+                  message(id: 1, role: 'agent', body: 'Unread reply'),
+                ],
+              ),
+            ),
+            200,
+          );
+        }
+        throw StateError('Unexpected request: ${request.url}');
+      }),
+    );
+
+    await tester.pumpWidget(_app(CerqleChatLauncher(
+      config: config,
+      controller: runtime.controller,
+    )));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('cerqle-unread-indicator')),
+      findsNothing,
+    );
 
     await tester.pumpWidget(const SizedBox.shrink());
     await runtime.dispose();

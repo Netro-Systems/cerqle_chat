@@ -220,6 +220,92 @@ void registerViewStateTests(CerqleConfig config) {
     await runtime.dispose();
   });
 
+  testWidgets('sent and received message links are blue and tappable',
+      (tester) async {
+    final runtime = _runtime(
+      config,
+      MockClient((request) async {
+        if (request.url.path.endsWith('/session')) {
+          return http.Response(
+            jsonEncode(
+              sessionResponse(
+                messages: <Map<String, Object?>>[
+                  message(
+                    id: 1,
+                    role: 'agent',
+                    body: 'https://fast.com/',
+                  ),
+                  message(
+                    id: 2,
+                    role: 'visitor',
+                    body: 'hello\n\nwww.example.com/docs.',
+                    sentBy: 'human',
+                  ),
+                ],
+              ),
+            ),
+            200,
+          );
+        }
+        return http.Response('{}', 200);
+      }),
+    );
+
+    await tester.pumpWidget(_app(
+      CerqleChatView(config: config, controller: runtime.controller),
+    ));
+    await tester.pumpAndSettle();
+
+    final messageTexts = tester.widgetList<SelectableText>(
+      find.byKey(const ValueKey<String>('cerqle-linkified-message-text')),
+    );
+    expect(messageTexts, hasLength(2));
+
+    final byText = <String, SelectableText>{
+      for (final text in messageTexts) text.textSpan!.toPlainText(): text,
+    };
+    final receivedSpans = byText['https://fast.com/']!.textSpan!.children!;
+    final receivedLink = receivedSpans.single as TextSpan;
+    expect(receivedLink.text, 'https://fast.com/');
+    expect(receivedLink.style!.color, const Color(0xFF1565C0));
+    expect(receivedLink.style!.decoration, TextDecoration.underline);
+    expect(receivedLink.recognizer, isA<TapGestureRecognizer>());
+
+    final sentSpans =
+        byText['hello\n\nwww.example.com/docs.']!.textSpan!.children!;
+    final sentLink = sentSpans.whereType<TextSpan>().firstWhere(
+          (span) => span.recognizer is TapGestureRecognizer,
+        );
+    expect(sentLink.text, 'www.example.com/docs');
+    expect(sentLink.style!.color, const Color(0xFF64B5F6));
+    expect(sentLink.style!.decoration, TextDecoration.underline);
+    expect((sentSpans.last as TextSpan).text, '.');
+
+    const launcherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    MethodCall? launchCall;
+    messenger.setMockMethodCallHandler(launcherChannel, (call) async {
+      launchCall = call;
+      return true;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(launcherChannel, null),
+    );
+
+    (sentLink.recognizer! as TapGestureRecognizer).onTap!();
+    await tester.pump();
+
+    expect(launchCall?.method, 'launch');
+    final launchArguments = launchCall!.arguments as Map<Object?, Object?>;
+    expect(launchArguments['url'], 'https://www.example.com/docs');
+    expect(launchArguments['useWebView'], isFalse);
+    expect(launchArguments['useSafariVC'], isFalse);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await runtime.dispose();
+  });
+
   testWidgets('ready view opens at the latest message', (tester) async {
     final messages = List<Map<String, Object?>>.generate(40, (index) {
       final id = index + 1;

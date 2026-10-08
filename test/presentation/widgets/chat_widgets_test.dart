@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -23,6 +24,7 @@ void main() {
     widgetKey: 'test-widget',
     apiBaseUrl: 'https://chat.example.com',
     enableOneSignal: false,
+    requireNotificationPermission: false,
   );
 
   registerViewStateTests(config);

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../../application/cerqle_runtime.dart';
 import '../../configuration/cerqle_config.dart';
@@ -8,13 +9,21 @@ import '../../domain/models/models.dart';
 import '../facade/cerqle_chat.dart';
 import '../media/remote_image.dart';
 import '../theme/resolved_theme.dart';
+import '../unread_controller_registry.dart';
 import '../widgets/brand_logo.dart';
+import '../widgets/unread_badge.dart';
 
 /// Builds a custom launcher from controller state and an idempotent open action.
 typedef CerqleLauncherBuilder = Widget Function(
   BuildContext context,
   CerqleChatState state,
   VoidCallback openChat,
+);
+
+/// Builds custom content for an unread badge from the current unread count.
+typedef CerqleBadgeLabelBuilder = Widget Function(
+  BuildContext context,
+  int unreadCount,
 );
 
 /// Floating launcher that initializes chat and opens one presentation per scope.
@@ -30,6 +39,18 @@ class CerqleChatLauncher extends StatefulWidget {
     this.margin,
     this.presentation,
     this.builder,
+    this.showBadge = false,
+    this.badgeShowCount = false,
+    this.badgeMaxCount = 99,
+    this.badgeLabelBuilder,
+    this.badgeBackgroundColor,
+    this.badgeTextColor,
+    this.badgeSmallSize = 14,
+    this.badgeLargeSize,
+    this.badgeTextStyle,
+    this.badgePadding,
+    this.badgeAlignment,
+    this.badgeOffset = const Offset(1, -1),
   });
 
   /// Widget and visitor configuration.
@@ -50,12 +71,49 @@ class CerqleChatLauncher extends StatefulWidget {
   /// Optional custom launcher renderer.
   final CerqleLauncherBuilder? builder;
 
+  /// Whether the default launcher displays unread state.
+  final bool showBadge;
+
+  /// Whether the badge displays its unread count instead of a dot.
+  final bool badgeShowCount;
+
+  /// Largest count displayed before the badge uses a plus suffix.
+  final int badgeMaxCount;
+
+  /// Optional custom unread badge label, built from the current count.
+  final CerqleBadgeLabelBuilder? badgeLabelBuilder;
+
+  /// Optional unread badge fill color.
+  final Color? badgeBackgroundColor;
+
+  /// Optional unread badge label color.
+  final Color? badgeTextColor;
+
+  /// Diameter of a dot badge.
+  final double? badgeSmallSize;
+
+  /// Height of a badge with label content.
+  final double? badgeLargeSize;
+
+  /// Optional unread badge label style.
+  final TextStyle? badgeTextStyle;
+
+  /// Padding around overflow or custom unread badge label content.
+  final EdgeInsetsGeometry? badgePadding;
+
+  /// Alignment of the badge relative to the launcher.
+  final AlignmentGeometry? badgeAlignment;
+
+  /// Fine positioning adjustment after alignment.
+  final Offset? badgeOffset;
+
   @override
   State<CerqleChatLauncher> createState() => _CerqleChatLauncherState();
 }
 
 class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
   late CerqleChatController _controller;
+  late String _unreadScope;
   CerqleClient? _ownedClient;
   StreamSubscription<CerqleChatState>? _subscription;
   late CerqleChatState _state;
@@ -72,11 +130,27 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
     } else {
       _controller = supplied;
     }
+    _unreadScope = UnreadControllerRegistry.register(
+      config: widget.config,
+      controller: _controller,
+    );
     _state = _controller.state;
-    _subscription = _controller.states.listen((state) {
-      if (mounted) setState(() => _state = state);
-    });
-    unawaited(_controller.initialize().catchError((_) {}));
+    _subscription = _controller.states.listen(_onState);
+    if (widget.config.registerUserOnStartup) {
+      unawaited(_controller.initialize().catchError((_) {}));
+    }
+  }
+
+  void _onState(CerqleChatState state) {
+    if (!mounted) return;
+    if (SchedulerBinding.instance.schedulerPhase ==
+        SchedulerPhase.persistentCallbacks) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _state = state);
+      });
+      return;
+    }
+    setState(() => _state = state);
   }
 
   @override
@@ -86,10 +160,13 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
     if (custom != null) return custom(context, _state, open);
 
     final isConfigurationLoaded = _state.widget != null;
+    final canRenderBeforeRegistration = !widget.config.registerUserOnStartup &&
+        _state.phase == CerqleChatPhase.idle;
+    final shouldRender = isConfigurationLoaded || canRenderBeforeRegistration;
     final reduceMotion =
         MediaQuery.maybeOf(context)?.disableAnimations ?? false;
     if (reduceMotion) {
-      if (!isConfigurationLoaded) return const SizedBox.shrink();
+      if (!shouldRender) return const SizedBox.shrink();
       return _buildPositionedLauncher(
         context,
         child: _buildDefaultLauncherButton(context, open),
@@ -102,7 +179,7 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
         key: const ValueKey<String>('cerqle-launcher-transition'),
         duration: const Duration(milliseconds: 140),
         transitionBuilder: _buildZoomTransition,
-        child: isConfigurationLoaded
+        child: shouldRender
             ? KeyedSubtree(
                 key: const ValueKey<String>('cerqle-launcher-loaded'),
                 child: _buildDefaultLauncherButton(context, open),
@@ -156,27 +233,48 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
       useApiColors: widget.config.useApiColors,
     );
     const label = 'Open chat';
+    final button = Stack(
+      clipBehavior: Clip.none,
+      children: <Widget>[
+        Positioned.fill(
+          child: FloatingActionButton(
+            heroTag: null,
+            tooltip: label,
+            onPressed: open,
+            backgroundColor: colors.primary,
+            foregroundColor: colors.onPrimary,
+            child: _launcherIcon(_state, colors.launcherSize),
+          ),
+        ),
+      ],
+    );
     return Semantics(
       button: true,
       label: label,
       child: SizedBox.square(
         dimension: colors.launcherSize,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: <Widget>[
-            Positioned.fill(
-              child: FloatingActionButton(
-                heroTag: null,
-                tooltip: label,
-                onPressed: open,
-                backgroundColor: colors.primary,
-                foregroundColor: colors.onPrimary,
-                child: _launcherIcon(_state, colors.launcherSize),
-              ),
-            ),
-          ],
-        ),
+        child: _buildUnreadBadge(colors, button),
       ),
+    );
+  }
+
+  Widget _buildUnreadBadge(CerqleResolvedTheme colors, Widget child) {
+    if (!widget.showBadge) return child;
+    return CerqleUnreadBadgeView(
+      unreadCount: _state.unreadCount,
+      indicatorKey: const ValueKey<String>('cerqle-unread-indicator'),
+      showCount: widget.badgeShowCount,
+      maxCount: widget.badgeMaxCount,
+      labelBuilder: widget.badgeLabelBuilder,
+      backgroundColor: widget.badgeBackgroundColor ?? colors.error,
+      textColor: widget.badgeTextColor,
+      smallSize: widget.badgeSmallSize,
+      largeSize: widget.badgeLargeSize,
+      textStyle: widget.badgeTextStyle,
+      padding: widget.badgePadding,
+      alignment: widget.badgeAlignment,
+      offset: widget.badgeOffset,
+      child: child,
     );
   }
 
@@ -194,8 +292,9 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
     );
   }
 
-  Widget _builtInLauncherLogo() =>
-      const CerqleBrandLogo(imageKey: ValueKey<String>('cerqle-launcher-logo'));
+  Widget _builtInLauncherLogo() => const CerqleBrandLogo.launcher(
+        imageKey: ValueKey<String>('cerqle-launcher-logo'),
+      );
 
   Alignment _serverAlignment(CerqleChatState state) =>
       state.widget?.launcherPosition == CerqleLauncherPosition.bottomLeft
@@ -220,6 +319,7 @@ class _CerqleChatLauncherState extends State<CerqleChatLauncher> {
   @override
   void dispose() {
     unawaited(_subscription?.cancel());
+    UnreadControllerRegistry.unregister(_unreadScope, _controller);
     final client = _ownedClient;
     if (client != null) {
       unawaited(_controller.dispose().then((_) => client.close()));

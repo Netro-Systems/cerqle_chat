@@ -1,8 +1,6 @@
-import 'dart:async';
-
+import 'package:cerqle_chat/cerqle_chat.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'package:cerqle_chat/cerqle_chat.dart';
 
 import 'src/theme/example_theme.dart';
 import 'src/widgets/example_brand_header.dart';
@@ -21,35 +19,21 @@ Future<void> main() async {
     widgetKey: widgetKey,
     requireNotificationPermission: true,
     lightStatusBarIcons: true,
-    apiBaseUrl:
-        dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ?? 'https://yourdomain.com',
+    apiBaseUrl: dotenv.maybeGet('CERQLE_API_BASE_URL')?.trim() ??
+        'https://yourdomain.com',
     oneSignalAppId: configuredOneSignalAppId?.isNotEmpty == true
         ? configuredOneSignalAppId!
         : CerqleConfig.defaultOneSignalAppId,
     user: const CerqleUser(
       name: 'Demo Visitor',
       email: 'visitor@demo.com',
-      location: CerqleLocation(
-        country: 'Bangladesh',
-        countryCode: 'BD',
-        city: 'Dhaka',
-        region: 'Dhaka Division',
-        latitude: 23.8103,
-        longitude: 90.4125,
-        pageTitle: 'Cerqle Example App',
-        pageUrl: 'cerqle://example',
-      ),
     ),
   );
 
-  // 1. Initialize push notification handlers
-  CerqleChat.initializeNotificationHandlers(
+  await CerqleChat.initialize(
     config: config,
     navigatorKey: navigatorKey,
   );
-
-  // 2. Register live visitor presence in background
-  unawaited(CerqleChat.registerVisitor(config: config));
 
   runApp(
     ExampleApp(config: config),
@@ -86,71 +70,144 @@ class ExampleHome extends StatelessWidget {
             preferredSize: Size.fromHeight(1),
             child: Divider(height: 1, color: cerqleBorder),
           ),
-        ),
-        body: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: cerqleBackground,
-          ),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 760),
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
-                children: [
-                  const ExampleHeroCard(),
-                  const SizedBox(height: 24),
-                  const _SectionHeader(),
-                  const SizedBox(height: 12),
-                  IntegrationCard(
-                    icon: Icons.fullscreen_rounded,
-                    title: 'Full-screen chat',
-                    subtitle: 'Open a dedicated support workspace',
-                    onTap: () => CerqleChat.open(
-                      context,
-                      config: config,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  IntegrationCard(
-                    icon: Icons.vertical_align_top_rounded,
-                    title: 'Bottom sheet',
-                    subtitle: 'Slide chat over the current workflow',
-                    onTap: () => CerqleChat.open(
-                      context,
-                      config: config,
-                      presentation: CerqlePresentation.bottomSheet,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  IntegrationCard(
-                    icon: Icons.web_asset_rounded,
-                    title: 'Dialog',
-                    subtitle: 'Launch a compact support window',
-                    onTap: () => CerqleChat.open(
-                      context,
-                      config: config,
-                      presentation: CerqlePresentation.dialog,
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  IntegrationCard(
-                    icon: Icons.view_quilt_rounded,
-                    title: 'Embedded view',
-                    subtitle: 'Render chat inside an existing layout',
-                    onTap: () => Navigator.of(context).push<void>(
-                      MaterialPageRoute<void>(
-                        builder: (_) => EmbeddedExample(config: config),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+          actions: [
+            CerqleChat.badge(
+              config: config,
+              showCount: true,
+              largeSize: 18,
+              backgroundColor: Color(0xFFFF0000),
+              textStyle: TextStyle(fontSize: 10),
+              offset: Offset(-6, 6),
+              child: IconButton(
+                iconSize: 26,
+                icon: const Icon(Icons.message),
+                onPressed: () async {
+                  await CerqleChat.open(
+                    context,
+                    config: config,
+                  );
+                },
               ),
-            ),
-          ),
+            )
+          ],
         ),
-        floatingActionButton: CerqleChatLauncher(config: config),
+        body: Column(
+          children: [
+            CerqleChat.badge(
+              config: config,
+              showCount: true,
+              largeSize: 20,
+              backgroundColor: const Color(0xFFFF0000),
+              textStyle: const TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w600,
+              ),
+              offset: const Offset(5, -5),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(16),
+                  onTap: () async {
+                    await CerqleChat.open(context, config: config);
+                  },
+                  child: Container(
+                    width: 52,
+                    height: 52,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF5B007A),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 10,
+                          offset: Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.support_agent,
+                      color: Colors.white,
+                      size: 26,
+                    ),
+                  ),
+                ),
+              ),
+            )
+          ],
+        ),
+        // body: DecoratedBox(
+        //   decoration: const BoxDecoration(
+        //     color: cerqleBackground,
+        //   ),
+        //   child: Align(
+        //     alignment: Alignment.topCenter,
+        //     child: ConstrainedBox(
+        //       constraints: const BoxConstraints(maxWidth: 760),
+        //       child: ListView(
+        //         padding: const EdgeInsets.fromLTRB(20, 20, 20, 120),
+        //         children: [
+        //           const ExampleHeroCard(),
+        //           const SizedBox(height: 24),
+        //           const _SectionHeader(),
+        //           const SizedBox(height: 12),
+        //           IntegrationCard(
+        //             icon: Icons.fullscreen_rounded,
+        //             title: 'Full-screen chat',
+        //             subtitle: 'Open a dedicated support workspace',
+        //             onTap: () => CerqleChat.open(
+        //               context,
+        //               config: config,
+        //             ),
+        //           ),
+        //           const SizedBox(height: 10),
+        //           IntegrationCard(
+        //             icon: Icons.vertical_align_top_rounded,
+        //             title: 'Bottom sheet',
+        //             subtitle: 'Slide chat over the current workflow',
+        //             onTap: () => CerqleChat.open(
+        //               context,
+        //               config: config,
+        //               presentation: CerqlePresentation.bottomSheet,
+        //             ),
+        //           ),
+        //           const SizedBox(height: 10),
+        //           IntegrationCard(
+        //             icon: Icons.web_asset_rounded,
+        //             title: 'Dialog',
+        //             subtitle: 'Launch a compact support window',
+        //             onTap: () => CerqleChat.open(
+        //               context,
+        //               config: config,
+        //               presentation: CerqlePresentation.dialog,
+        //             ),
+        //           ),
+        //           const SizedBox(height: 10),
+        //           IntegrationCard(
+        //             icon: Icons.view_quilt_rounded,
+        //             title: 'Embedded view',
+        //             subtitle: 'Render chat inside an existing layout',
+        //             onTap: () => Navigator.of(context).push<void>(
+        //               MaterialPageRoute<void>(
+        //                 builder: (_) => EmbeddedExample(config: config),
+        //               ),
+        //             ),
+        //           ),
+        //           const SizedBox(height: 20),
+        //         ],
+        //       ),
+        //     ),
+        //   ),
+        // ),
+        floatingActionButton: CerqleChatLauncher(
+          config: config,
+          showBadge: true,
+          badgeShowCount: true,
+          badgeBackgroundColor: Color(0xFFFF0000),
+          badgeLargeSize: 20,
+          badgeOffset: Offset(4, -4),
+        ),
       );
 }
 

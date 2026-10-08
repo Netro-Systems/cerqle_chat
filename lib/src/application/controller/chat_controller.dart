@@ -107,7 +107,7 @@ class CerqleChatController with WidgetsBindingObserver {
         }
         // Permission prompting on chat open is controlled by
         // requireNotificationPermission in the presentation facade. Startup
-        // prompting remains controlled by initializeNotificationHandlers.
+        // prompting is handled internally by CerqleChat.initialize.
         deviceId = await _oneSignalService.currentPushToken(
           requestPermission: false,
         );
@@ -699,9 +699,28 @@ class CerqleChatController with WidgetsBindingObserver {
   }
 
   /// Manually marks unread agent messages as seen/read.
+  ///
+  /// This updates [state] optimistically and then calls the widget read
+  /// endpoint. Prebuilt chat surfaces call this while visible; headless
+  /// integrations should call it when their own chat UI is shown.
   Future<void> markRead() async {
     _ensureNotDisposed();
-    if (_state.phase != CerqleChatPhase.ready) return;
+    if (_state.phase != CerqleChatPhase.ready &&
+        _state.phase != CerqleChatPhase.reconnecting) {
+      return;
+    }
+    if (!_state.hasUnreadMessages) return;
+
+    final messages = _state.messages
+        .map(
+          (message) => message.role == CerqleMessageRole.agent &&
+                  !message.isActivity &&
+                  !message.isRead
+              ? message.copyWith(status: CerqleMessageStatus.read)
+              : message,
+        )
+        .toList();
+    _emit(_state.copyWith(messages: messages));
     try {
       await _client._markRead();
     } catch (_) {}
@@ -731,14 +750,7 @@ class CerqleChatController with WidgetsBindingObserver {
   /// Records that a prebuilt chat presentation opened.
   void handlePresentationOpened() {
     _addEvent(const CerqleChatOpened());
-    if (_state.phase == CerqleChatPhase.ready &&
-        _state.messages.any(
-          (m) =>
-              m.role == CerqleMessageRole.agent &&
-              m.status != CerqleMessageStatus.read,
-        )) {
-      unawaited(_client._markRead().catchError((_) {}));
-    }
+    unawaited(markRead().catchError((_) {}));
   }
 
   @internal
@@ -754,6 +766,7 @@ class CerqleChatController with WidgetsBindingObserver {
     _diagnostic(CerqleDiagnosticKind.lifecycle);
     if (_foreground) {
       if (_hasLease && _state.phase == CerqleChatPhase.ready) {
+        unawaited(refresh().catchError((_) {}));
         unawaited(_syncRealtime().catchError((_) {}));
       }
     } else {
@@ -899,9 +912,6 @@ class CerqleChatController with WidgetsBindingObserver {
   void _handleRealtimeMessageCreated(Object? payload) {
     final message = const WidgetResponseDecoder().realtimeMessage(payload);
     if (message == null) return;
-    if (message.role == CerqleMessageRole.agent) {
-      unawaited(_client._markRead().catchError((_) {}));
-    }
     final messages = _mergeIncomingMessages(
       _state.messages,
       <CerqleMessage>[message],

@@ -5,6 +5,10 @@ bottom sheet, dialog, gallery-image upload, microphone recording, and document
 attachments. The SDK provides these media features by default; applications
 only need a `CerqleMediaAdapter` when overriding the built-in behavior.
 
+It also demonstrates the unified `CerqleChat.initialize(...)` startup flow,
+API-branded launcher, synchronized unread badges on the app bar and FAB, and
+external-browser links in sent and received messages.
+
 1. Copy `.env.example` to `.env`.
 2. Put your public widget key in `CERQLE_WIDGET_KEY`. Set
    `CERQLE_ONESIGNAL_APP_ID` to override the SDK's default OneSignal app ID.

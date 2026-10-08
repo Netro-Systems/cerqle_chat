@@ -25,13 +25,18 @@ final class MessageReconciler {
       if (existingIndex == null) {
         indexes[id] = messages.length;
         messages.add(message);
-        if (message.role == CerqleMessageRole.agent) {
+        if (message.role == CerqleMessageRole.agent && !message.isActivity) {
           onNewAgentMessage?.call(message);
         }
       } else {
+        final existingMessage = messages[existingIndex];
         messages[existingIndex] = message.copyWith(
-          localId: messages[existingIndex].localId,
-          localUpload: messages[existingIndex].localUpload,
+          localId: existingMessage.localId,
+          localUpload: existingMessage.localUpload,
+          status: _mostAdvancedStatus(
+            existingMessage.status,
+            message.status,
+          ),
         );
       }
     }
@@ -57,5 +62,28 @@ final class MessageReconciler {
     if (bId != null) return 1;
     final time = a.createdAt.compareTo(b.createdAt);
     return time != 0 ? time : a.localId.compareTo(b.localId);
+  }
+
+  CerqleMessageStatus _mostAdvancedStatus(
+    CerqleMessageStatus current,
+    CerqleMessageStatus incoming,
+  ) {
+    if (current == incoming) return current;
+    if (incoming == CerqleMessageStatus.failed) {
+      return current == CerqleMessageStatus.delivered ||
+              current == CerqleMessageStatus.read
+          ? current
+          : incoming;
+    }
+    if (current == CerqleMessageStatus.failed) return current;
+    const rank = <CerqleMessageStatus, int>{
+      CerqleMessageStatus.pending: 0,
+      CerqleMessageStatus.unconfirmed: 0,
+      CerqleMessageStatus.sent: 1,
+      CerqleMessageStatus.delivered: 2,
+      CerqleMessageStatus.read: 3,
+      CerqleMessageStatus.failed: -1,
+    };
+    return rank[incoming]! > rank[current]! ? incoming : current;
   }
 }
