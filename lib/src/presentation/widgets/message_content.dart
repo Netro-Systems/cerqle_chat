@@ -73,16 +73,141 @@ class _MessageContent extends StatelessWidget {
             ),
           ),
         if (_visibleMessageBody(message).isNotEmpty)
-          SelectableText(
-            _visibleMessageBody(message),
-            style: Theme.of(context)
-                .textTheme
-                .bodyMedium
-                ?.copyWith(color: textColor, height: 1.4),
+          _LinkifiedMessageText(
+            text: _visibleMessageBody(message),
+            textColor: textColor,
+            visitor: message.role == CerqleMessageRole.visitor,
           ),
       ],
     );
   }
+}
+
+class _LinkifiedMessageText extends StatefulWidget {
+  const _LinkifiedMessageText({
+    required this.text,
+    required this.textColor,
+    required this.visitor,
+  });
+
+  final String text;
+  final Color textColor;
+  final bool visitor;
+
+  @override
+  State<_LinkifiedMessageText> createState() => _LinkifiedMessageTextState();
+}
+
+class _LinkifiedMessageTextState extends State<_LinkifiedMessageText> {
+  static final RegExp _urlPattern = RegExp(
+    r'(?:(?:https?://)|(?:www\.))[^\s<>]+',
+    caseSensitive: false,
+  );
+  static final RegExp _trailingPunctuation = RegExp(r'[.,!?;:\)\]\}]+$');
+
+  final List<TapGestureRecognizer> _recognizers = <TapGestureRecognizer>[];
+
+  @override
+  Widget build(BuildContext context) {
+    _disposeRecognizers();
+    final baseStyle = Theme.of(context).textTheme.bodyMedium?.copyWith(
+          color: widget.textColor,
+          height: 1.4,
+        );
+    final linkColor =
+        widget.visitor ? const Color(0xFF64B5F6) : const Color(0xFF1565C0);
+
+    return SelectableText.rich(
+      TextSpan(
+        style: baseStyle,
+        children: _buildSpans(
+          context,
+          linkStyle: baseStyle?.copyWith(
+            color: linkColor,
+            decoration: TextDecoration.underline,
+            decorationColor: linkColor,
+          ),
+        ),
+      ),
+      key: const ValueKey<String>('cerqle-linkified-message-text'),
+    );
+  }
+
+  List<InlineSpan> _buildSpans(
+    BuildContext context, {
+    required TextStyle? linkStyle,
+  }) {
+    final spans = <InlineSpan>[];
+    var cursor = 0;
+    for (final match in _urlPattern.allMatches(widget.text)) {
+      if (match.start > cursor) {
+        spans.add(TextSpan(text: widget.text.substring(cursor, match.start)));
+      }
+
+      final candidate = match.group(0)!;
+      final trailingMatch = _trailingPunctuation.firstMatch(candidate);
+      final trailing = trailingMatch?.group(0) ?? '';
+      final displayUrl = trailing.isEmpty
+          ? candidate
+          : candidate.substring(0, candidate.length - trailing.length);
+      final uri = Uri.tryParse(
+        displayUrl.startsWith(RegExp(r'https?://', caseSensitive: false))
+            ? displayUrl
+            : 'https://$displayUrl',
+      );
+
+      if (uri != null &&
+          (uri.scheme == 'http' || uri.scheme == 'https') &&
+          uri.host.isNotEmpty) {
+        final recognizer = TapGestureRecognizer()
+          ..onTap = () => unawaited(_openExternalMessageLink(context, uri));
+        _recognizers.add(recognizer);
+        spans.add(
+          TextSpan(
+            text: displayUrl,
+            style: linkStyle,
+            recognizer: recognizer,
+          ),
+        );
+      } else {
+        spans.add(TextSpan(text: displayUrl));
+      }
+      if (trailing.isNotEmpty) spans.add(TextSpan(text: trailing));
+      cursor = match.end;
+    }
+    if (cursor < widget.text.length) {
+      spans.add(TextSpan(text: widget.text.substring(cursor)));
+    }
+    return spans;
+  }
+
+  void _disposeRecognizers() {
+    for (final recognizer in _recognizers) {
+      recognizer.dispose();
+    }
+    _recognizers.clear();
+  }
+
+  @override
+  void dispose() {
+    _disposeRecognizers();
+    super.dispose();
+  }
+}
+
+Future<void> _openExternalMessageLink(BuildContext context, Uri uri) async {
+  try {
+    final launched = await launchUrl(
+      uri,
+      mode: LaunchMode.externalApplication,
+    );
+    if (launched || !context.mounted) return;
+  } catch (_) {
+    if (!context.mounted) return;
+  }
+  ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+    const SnackBar(content: Text('Could not open link.')),
+  );
 }
 
 bool _isImageAttachment({String? filename, String? mimeType, Uri? url}) {
