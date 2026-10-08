@@ -30,7 +30,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  cerqle_chat: ^0.1.2
+  cerqle_chat: ^0.1.3
 ```
 
 Or run:
@@ -70,17 +70,30 @@ access shows a Settings snackbar. Permission is checked again on every attempt.
 
 ## Quick Start
 
-Open a functional chat interface with just a few lines of code using your public **Widget Key**:
+Create one configuration and initialize Cerqle before `runApp` so push handling,
+API branding, visitor registration, and realtime unread state are ready:
 
 ```dart
 import 'package:flutter/material.dart';
 import 'package:cerqle_chat/cerqle_chat.dart';
 
-void openSupportChat(BuildContext context) async {
-  final config = CerqleConfig(widgetKey: 'YOUR_WIDGET_KEY');
-  await CerqleChat.open(context, config: config);
+final navigatorKey = GlobalKey<NavigatorState>();
+const config = CerqleConfig(widgetKey: 'YOUR_WIDGET_KEY');
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await CerqleChat.initialize(
+    config: config,
+    navigatorKey: navigatorKey,
+  );
+  runApp(MaterialApp(navigatorKey: navigatorKey, home: const MyHomePage()));
 }
 ```
+
+Open chat from any widget with
+`await CerqleChat.open(context, config: config)`, or use one of the integration
+surfaces below. If push handling and pre-open unread state are unnecessary,
+direct `CerqleChat.open(...)` usage remains supported.
 
 > [!NOTE]
 > The `widgetKey` is a public routing identifier, not a secret. Never bundle Cerqle management credentials or widget secret keys in client applications.
@@ -159,7 +172,8 @@ Widget buildFloatingLauncher(CerqleConfig config) {
 The launcher can display an unread indicator when an agent replies while the
 chat is closed. It keeps listening through the controller's realtime session,
 so the indicator does not depend on push-notification delivery. Opening the
-chat marks the visible replies as read and clears the badge. Enable it with
+chat from the launcher or another entry point marks the visible replies as read
+and clears every registered badge for the same configuration. Enable it with
 `showBadge: true`:
 
 Display a count and customize its appearance when needed:
@@ -260,7 +274,7 @@ Future<void> runHeadlessChat(CerqleConfig config) async {
 | `oneSignalAppId` | `String` | `CerqleConfig.defaultOneSignalAppId` | OneSignal App ID used for push notification registration. |
 | `enableOneSignal` | `bool` | `true` | Whether device push notification tokens are registered on session start. |
 | `requireNotificationPermission` | `bool` | `true` | When true, notification permission is required to open a modal chat. Denial keeps chat closed; if the OS prompt is unavailable, a compact message links to notification settings. |
-| `registerUserOnStartup` | `bool` | `true` | Whether the SDK registers the configured visitor in the background during initialization. |
+| `registerUserOnStartup` | `bool` | `true` | Whether initialization registers the visitor and loads API branding/realtime unread state before first open. When false, launchers use local fallback branding until chat opens. |
 | `sessionStore` | `CerqleSessionStore?` | `null` | Custom session store override (defaults to secure encrypted platform storage). |
 
 ---
@@ -385,6 +399,14 @@ pass it through `mediaAdapter`. This replaces the SDK default.
 Native voice-message playback and previews use temporary audio files with
 format detection, which are cleaned up when the player closes. Web uses data-URI
 playback.
+
+### 🔗 Clickable Message Links
+
+Sent and received text messages automatically recognize `http://`, `https://`,
+and `www.` links. Link text is blue and underlined, remains selectable with the
+rest of the message, and opens in the platform's external browser. A leading
+scheme is added as `https://` for `www.` links, while sentence punctuation is
+kept outside the destination URL.
 
 ---
 
