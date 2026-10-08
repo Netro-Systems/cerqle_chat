@@ -30,7 +30,7 @@ Add the package to your `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  cerqle_chat: ^0.1.3
+  cerqle_chat: ^0.1.4
 ```
 
 Or run:

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.1.4 - 2026-10-08
+
+### Changed
+
+- Restored the example app's integration showcase for opening chat full-screen,
+  in a bottom sheet, in a dialog, or as an embedded view.
+- Removed the temporary standalone badge demo from the example home screen;
+  unread badge behavior remains demonstrated by `CerqleChatLauncher`.
+
 ## 0.1.3 - 2026-10-08
 
 ### Added
