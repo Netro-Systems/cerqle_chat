@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.5 - 2026-10-29
+
+### Changed
+
+- Added `source: customer_sdk` metadata to session, messaging, polling, typing,
+  read, and handoff requests so App SDK conversations are identified separately
+  from website traffic in the Inbox.
+
 ## 0.1.4 - 2026-10-08
 
 ### Changed
