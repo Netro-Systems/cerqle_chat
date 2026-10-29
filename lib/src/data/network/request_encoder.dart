@@ -22,6 +22,7 @@ final class WidgetRequestEncoder {
   }) =>
       <String, Object>{
         'key': widgetKey,
+        'source': 'customer_sdk',
         'active': true,
         if (storedSession != null) 'visitor_id': storedSession.visitorId,
         if (user?.name != null) 'name': user!.name!,
@@ -45,18 +46,27 @@ final class WidgetRequestEncoder {
     required String widgetKey,
     required String text,
   }) =>
-      <String, Object>{'key': widgetKey, 'message': text};
+      <String, Object>{
+        'key': widgetKey,
+        'source': 'customer_sdk',
+        'message': text
+      };
 
   /// Encodes a visitor-typing body.
   Map<String, Object> typingBody({
     required String widgetKey,
     required bool isTyping,
   }) =>
-      <String, Object>{'key': widgetKey, 'is_typing': isTyping};
+      <String, Object>{
+        'key': widgetKey,
+        'source': 'customer_sdk',
+        'is_typing': isTyping
+      };
 
   /// Encodes a human-handoff body.
   Map<String, Object> handoffBody(String widgetKey) => <String, Object>{
         'key': widgetKey,
+        'source': 'customer_sdk',
       };
 
   /// Encodes a JSON request body without exposing maps outside data.
@@ -79,7 +89,7 @@ final class WidgetRequestEncoder {
       );
     }
     final fields = <String, String>{
-      'key': widgetKey,
+      'key': widgetKey, 'source': 'customer_sdk',
       'type': switch (type) {
         CerqleMessageType.image => 'image',
         CerqleMessageType.audio => 'audio',
