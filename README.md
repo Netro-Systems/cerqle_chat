@@ -70,6 +70,14 @@ access shows a Settings snackbar. Permission is checked again on every attempt.
 
 ## Quick Start
 
+Use the same public widget key as your website. The SDK sends
+`source: customer_sdk` on session, messaging, polling, typing, read and handoff
+requests so new conversations show **App SDK** in the Inbox. Requests without a
+source remain website traffic. This requires the matching backend update; older
+SDK-specific keys remain supported. Website and SDK enable switches stay separate.
+Restored conversations keep their original source. The source flag is metadata,
+not proof of identity; visitor tokens and signed identity checks still apply.
+
 Create one configuration and initialize Cerqle before `runApp` so push handling,
 API branding, visitor registration, and realtime unread state are ready:
 

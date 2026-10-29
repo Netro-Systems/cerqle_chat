@@ -40,6 +40,7 @@ void _registerRequestContractTests() {
       expect(recorded.headers['x-widget-token'], 'token-1');
       _expectNoInventedHeaders(recorded);
       expect(body, <String, dynamic>{
+        'source': 'customer_sdk',
         'key': 'test-widget',
         'active': true,
         'visitor_id': 'visitor-1',
@@ -104,11 +105,13 @@ void _registerRequestContractTests() {
       await api.requestHandoff(widgetKey: 'test-widget', token: 'token-1');
 
       expect(bodies[0], <String, dynamic>{
+        'source': 'customer_sdk',
         'key': 'test-widget',
         'message': 'Hello',
       });
       expect(requests[1].method, 'GET');
       expect(requests[1].url.queryParameters, <String, String>{
+        'source': 'customer_sdk',
         'key': 'test-widget',
         'after': '42',
         'active': '1',
@@ -116,10 +119,12 @@ void _registerRequestContractTests() {
       });
       expect(requests[1].headers.containsKey('content-type'), isFalse);
       expect(bodies[1], <String, dynamic>{
+        'source': 'customer_sdk',
         'key': 'test-widget',
         'is_typing': true,
       });
-      expect(bodies[2], <String, dynamic>{'key': 'test-widget'});
+      expect(bodies[2],
+          <String, dynamic>{'key': 'test-widget', 'source': 'customer_sdk'});
       for (final request in requests) {
         expect(request.headers['x-widget-token'], 'token-1');
         _expectNoInventedHeaders(request);
@@ -133,6 +138,7 @@ void _registerRequestContractTests() {
         expect(request, isA<http.MultipartRequest>());
         final multipart = request as http.MultipartRequest;
         expect(multipart.fields, <String, String>{
+          'source': 'customer_sdk',
           'key': 'test-widget',
           'type': 'image',
           'message': 'A caption',

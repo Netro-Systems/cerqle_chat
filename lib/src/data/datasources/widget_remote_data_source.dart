@@ -109,6 +109,7 @@ final class HttpWidgetRemoteDataSource implements WidgetRemoteDataSource {
       token: token,
       query: <String, String>{
         'key': widgetKey,
+        'source': 'customer_sdk',
         'after': after.toString(),
         'active': '1',
         'open': '1',
@@ -215,7 +216,7 @@ final class HttpWidgetRemoteDataSource implements WidgetRemoteDataSource {
   }) async {
     await _networkCaller.postJson(
       ApiEndpoints.read,
-      body: _encoder.jsonBody({'key': widgetKey}),
+      body: _encoder.jsonBody({'key': widgetKey, 'source': 'customer_sdk'}),
       token: token,
       operation: WidgetOperation.markRead,
     );

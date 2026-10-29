@@ -43,6 +43,7 @@ void registerIdentitySyncTests(CerqleConfig config) {
     await controller.updateUser(null);
     expect(headers, <String?>[null, null, 'token-2']);
     expect(bodies.last, <String, dynamic>{
+      'source': 'customer_sdk',
       'key': 'test-widget',
       'is_typing': false,
     });
@@ -169,9 +170,13 @@ void registerIdentitySyncTests(CerqleConfig config) {
     expect(store.reads, <String>[namespace, namespace]);
     expect(store.writes, <String>[namespace, namespace]);
     expect(headers, <String?>[null, 'token-1']);
-    expect(
-        bodies.first, <String, dynamic>{'key': 'test-widget', 'active': true});
+    expect(bodies.first, <String, dynamic>{
+      'key': 'test-widget',
+      'source': 'customer_sdk',
+      'active': true
+    });
     expect(bodies.last, <String, dynamic>{
+      'source': 'customer_sdk',
       'key': 'test-widget',
       'active': true,
       'visitor_id': 'visitor-1',

@@ -24,6 +24,7 @@ void main() {
     );
 
     expect(body, <String, Object>{
+      'source': 'customer_sdk',
       'key': 'widget-key',
       'active': true,
       'visitor_id': 'visitor-1',
@@ -67,6 +68,7 @@ void main() {
     );
 
     expect(fields, <String, String>{
+      'source': 'customer_sdk',
       'key': 'widget-key',
       'type': 'image',
       'message': 'Caption',
